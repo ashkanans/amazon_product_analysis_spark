@@ -1,12 +1,36 @@
 import argparse
+
 import os
+import re
+
+from nltk.corpus import stopwords
+from nltk.stem import WordNetLemmatizer
+from nltk.tokenize import word_tokenize
+from pyspark.sql import SparkSession
+from pyspark.sql.functions import udf, col
+from pyspark.sql.types import ArrayType, StringType, Row
 
 from Problem1.analysis.LDAAnalyzer import LDAAnalyzer
 from Problem1.analysis.WordFrequencyAnalyzer import WordFrequencyAnalyzer
 from Problem1.scraping.AmazonScraper import AmazonScraper
 from Problem1.search.SearchEngine import SearchEngine
-from Problem2.SparkPreprocessing import preprocess_with_pyspark
 from Problem2.SparkSearchEngine import SparkSearchEngine
+
+venv_python_path = ".venv/Scripts/python.exe"
+
+os.environ["PYSPARK_PYTHON"] = venv_python_path
+os.environ["PYSPARK_DRIVER_PYTHON"] = venv_python_path
+
+# Configure Spark to use the virtual environment's Python
+spark = SparkSession.builder \
+    .appName("SparkTest") \
+    .master("local[*]") \
+    .config("spark.pyspark.python", venv_python_path) \
+    .config("spark.pyspark.driver.python", venv_python_path) \
+    .getOrCreate()
+
+stop_words = set(stopwords.words('english'))
+lemmatizer = WordNetLemmatizer()
 
 
 def parse_arguments():
@@ -30,6 +54,7 @@ def parse_arguments():
     parser.add_argument("--top_trigrams", type=int, default=10, help="Top trigrams for frequency analysis.")
     parser.add_argument("--query", type=str, help="Query for product search.")
     parser.add_argument("--top_k", type=int, default=5, help="Top results to display for search.")
+    parser.add_argument("--use_pyspark", action="store_true", help="Enable PySpark for preprocessing.")
 
     args = parser.parse_args()
     return args
@@ -91,6 +116,46 @@ def perform_search(processed_descriptions, args):
         print(f"Document ID: {doc_id}, Score: {score}, Description: {' '.join(processed_descriptions[doc_id])}")
 
 
+def preprocess_text(text):
+    # Convert to lowercase
+    text = text.lower()
+
+    # Tokenization
+    tokens = word_tokenize(text)
+
+    # Remove punctuation and non-alphanumeric characters
+    tokens = [re.sub(r'\W+', '', token) for token in tokens if re.sub(r'\W+', '', token)]
+
+    # Remove stopwords
+    tokens = [token for token in tokens if token not in stop_words]
+
+    # Lemmatize tokens
+    tokens = [lemmatizer.lemmatize(token) for token in tokens]
+
+    return tokens
+
+
+def preprocess_with_pyspark(df):
+    """
+    Function to preprocess text data using PySpark and NLTK.
+    :param df: Pandas DataFrame with a 'Description' column to process
+    :return: List of processed descriptions
+    """
+    # Convert the Pandas DataFrame to a Spark DataFrame
+    spark_df = spark.createDataFrame(df[['Description']])
+
+    preprocess_udf = udf(preprocess_text, ArrayType(StringType()))
+
+    # Apply preprocessing UDF to the Spark DataFrame
+    processed_spark_df = spark_df.withColumn("ProcessedDescription", preprocess_udf(col("Description")))
+
+    # Convert the result back to Pandas for downstream analysis
+    processed_df = processed_spark_df.select("ProcessedDescription").toPandas()
+    processed_descriptions = processed_df['ProcessedDescription'].tolist()
+
+    return processed_descriptions
+
+
 def main():
     args = parse_arguments()
     processed_descriptions = load_or_scrape_data(args)
@@ -142,5 +207,8 @@ def main():
         for doc_id, score in results:
             print(f"Document ID: {doc_id}, Score: {score}, Description: {' '.join(processed_descriptions[doc_id])}")
 
+
 if __name__ == "__main__":
     main()
+
+spark.stop()
