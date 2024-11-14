@@ -1,11 +1,14 @@
 import re
-
-from pyspark.ml.feature import HashingTF, IDF
+from pyspark.sql import functions as F
+from pyspark.ml.feature import HashingTF, IDF, Tokenizer
 from pyspark.sql import SparkSession
-from pyspark.sql.functions import col, explode, lit, struct, collect_list, array
+from pyspark.sql.functions import col, explode, lit, struct, collect_list, array, udf
+from pyspark.sql.types import FloatType
 
 # Initialize Spark session
-spark = SparkSession.builder.appName("SparkSearchEngine").getOrCreate()
+spark = (SparkSession.builder.appName("SparkSearchEngine")
+         .getOrCreate())
+spark.sparkContext.setCheckpointDir("checkpoint_dir")
 
 
 class SparkSearchEngine:
@@ -34,12 +37,15 @@ class SparkSearchEngine:
             *[struct(lit(i).alias("pos"), col("tokens")[i].alias("token")) for i in
               range(0, df.selectExpr("size(tokens)").head()[0])])))
 
+        # Flatten the tokens_with_pos struct into separate columns
+        tokens_with_pos = tokens_with_pos.select("doc_id", col("tokens_with_pos.token"), col("tokens_with_pos.pos"))
+
         # Build inverted index by grouping by token and collecting positions
         inverted_index = tokens_with_pos.groupBy("token").agg(
-            collect_list(struct("doc_id", "tokens_with_pos.pos")).alias("posting_list"))
+            collect_list(struct("doc_id", "pos")).alias("posting_list"))
 
         # Save to file (optional)
-        inverted_index.write.json("inverted_index.json")
+        # inverted_index.write.csv("inverted_index.csv")
 
         self.inverted_index = inverted_index
 
@@ -52,17 +58,20 @@ class SparkSearchEngine:
             [(doc_id, ' '.join(self.tokenize(text))) for doc_id, text in documents.items()])
         df = rdd.toDF(["doc_id", "text"])
 
+        # Tokenize text to create 'tokens' column
+        tokenizer = Tokenizer(inputCol="text", outputCol="tokens")
+        tokenized_df = tokenizer.transform(df)
+
         # Apply hashing to represent terms numerically
         hashingTF = HashingTF(inputCol="tokens", outputCol="rawFeatures", numFeatures=self.num_features)
-        featurized_data = hashingTF.transform(df)
+        featurized_data = hashingTF.transform(tokenized_df)
 
-        # Calculate IDF
+        # Calculate IDF and store the model
         idf = IDF(inputCol="rawFeatures", outputCol="features")
-        idf_model = idf.fit(featurized_data)
-        rescaled_data = idf_model.transform(featurized_data)
+        self.idf_model = idf.fit(featurized_data)  # Fit and store the model
+        rescaled_data = self.idf_model.transform(featurized_data)
 
         self.document_tfidf = rescaled_data.select("doc_id", "features")
-        self.document_tfidf.write.parquet("document_tfidf.parquet")
 
     def calculate_cosine_similarity(self, query, top_k=5):
         """
@@ -72,18 +81,24 @@ class SparkSearchEngine:
         query_tokens = self.tokenize(query)
         query_df = spark.createDataFrame([(0, query_tokens)], ["doc_id", "tokens"])
 
-        # Transform query tokens into TF-IDF
+        # Transform query tokens into TF-IDF using the stored IDF model
         hashingTF = HashingTF(inputCol="tokens", outputCol="rawFeatures", numFeatures=self.num_features)
         query_featurized = hashingTF.transform(query_df)
-        idf_model = IDF(inputCol="rawFeatures", outputCol="features")
-        query_features = idf_model.transform(query_featurized).select("features").head()[0]
+        query_features = self.idf_model.transform(query_featurized).select("features").head()[0]
 
-        # Calculate cosine similarity with each document
+        # Broadcast the query features
+        query_features_broadcast = spark.sparkContext.broadcast(query_features)
+
+        # Define UDF to calculate cosine similarity
         cosine_similarity_udf = udf(
-            lambda v1, v2: float(v1.dot(v2)) / (float(v1.norm(2)) * float(v2.norm(2))) if v1.norm(2) != 0 and v2.norm(
-                2) != 0 else 0.0, FloatType())
-        similarities = self.document_tfidf.withColumn("similarity",
-                                                      cosine_similarity_udf(col("features"), lit(query_features)))
+            lambda v: float(v.dot(query_features_broadcast.value)) /
+                      (float(v.norm(2)) * float(query_features_broadcast.value.norm(2)))
+            if v.norm(2) != 0 and query_features_broadcast.value.norm(2) != 0 else 0.0,
+            FloatType()
+        )
+
+        # Apply the UDF to calculate similarity for each document
+        similarities = self.document_tfidf.withColumn("similarity", cosine_similarity_udf(col("features")))
 
         # Filter and sort results based on similarity score
         results = similarities.filter(col("similarity") >= self.min_score_threshold).orderBy(
