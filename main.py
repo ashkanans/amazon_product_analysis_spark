@@ -6,6 +6,7 @@ from Problem1.analysis.WordFrequencyAnalyzer import WordFrequencyAnalyzer
 from Problem1.scraping.AmazonScraper import AmazonScraper
 from Problem1.search.SearchEngine import SearchEngine
 from Problem2.SparkPreprocessing import preprocess_with_pyspark
+from Problem2.SparkSearchEngine import SparkSearchEngine
 
 
 def parse_arguments():
@@ -98,11 +99,48 @@ def main():
         perform_frequency_analysis(processed_descriptions, args)
     if args.run_lda:
         perform_lda_analysis(processed_descriptions, args)
-    if args.run_search:
+    if args.run_search and args.use_pyspark:
+        documents = {i: ' '.join(desc) for i, desc in enumerate(processed_descriptions)}
+        print("Using Spark for search and indexing...")
+
+        # Initialize the Spark-based search engine
+        search_engine = SparkSearchEngine(min_score_threshold=0.05)
+
+        # Build the inverted index and calculate TF-IDF for Spark-based processing
+        search_engine.build_inverted_index(documents)
+        search_engine.calculate_tfidf(documents)
+
+        # Perform the query processing
         if not args.query:
             raise ValueError("A search query must be provided with the --run_search flag.")
-        perform_search(processed_descriptions, args)
 
+        results = search_engine.search(args.query, top_k=args.top_k)
+
+        print("Top search results:")
+        for result in results:
+            doc_id, score = result["doc_id"], result["similarity"]
+            print(f"Document ID: {doc_id}, Score: {score}, Description: {' '.join(processed_descriptions[doc_id])}")
+
+    # If non-Spark search is requested
+    elif args.run_search and not args.use_pyspark:
+        documents = {i: ' '.join(desc) for i, desc in enumerate(processed_descriptions)}
+        print("Using non-Spark (original) search engine...")
+
+        # Initialize the original search engine
+        search_engine = SearchEngine(min_score_threshold=0.05)
+
+        # Build the TF-IDF matrix for non-Spark processing
+        search_engine.index_documents(documents)
+
+        # Perform the query processing
+        if not args.query:
+            raise ValueError("A search query must be provided with the --run_search flag.")
+
+        results = search_engine.search(args.query, top_k=args.top_k)
+
+        print("Top search results:")
+        for doc_id, score in results:
+            print(f"Document ID: {doc_id}, Score: {score}, Description: {' '.join(processed_descriptions[doc_id])}")
 
 if __name__ == "__main__":
     main()
