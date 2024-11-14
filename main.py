@@ -56,12 +56,14 @@ import os
 from Problem1.analysis.LDAAnalyzer import LDAAnalyzer
 from Problem1.analysis.WordFrequencyAnalyzer import WordFrequencyAnalyzer
 from Problem1.scraping.AmazonScraper import AmazonScraper
+from Problem1.search.SearchEngine import SearchEngine
 
 
 def main():
     scrape = False
     plot_frequency = False
     run_lda = False
+    run_search_engine = False
 
     parser = argparse.ArgumentParser(description="Run Amazon product analysis and topic modeling.")
 
@@ -77,6 +79,10 @@ def main():
     parser.add_argument(
         "--run_lda", action="store_true",
         help="Include this flag to perform LDA topic modeling on the data."
+    )
+    parser.add_argument(
+        "--run_search", action="store_true",
+        help="Include this flag to perform search on the indexed data."
     )
 
     # Parse initial arguments to determine which options are needed
@@ -134,6 +140,18 @@ def main():
         parser.add_argument(
             "--top_trigrams", type=int, default=10,
             help="Number of top trigrams to display in frequency analysis (e.g., 10)."
+        )
+
+    # If search is requested, ask for query and number of results
+    if args.run_search:
+        run_search_engine = True
+        parser.add_argument(
+            "--query", type=str, required=True,
+            help="Search query for finding relevant Amazon products."
+        )
+        parser.add_argument(
+            "--top_k", type=int, default=5,
+            help="Number of top results to display for the search query (e.g., 5)."
         )
 
     # Parse all arguments including conditionally added ones
@@ -195,6 +213,21 @@ def main():
 
         # Visualize topics
         lda_analyzer.visualize_topics()
+
+    # Run Search if requested
+    if run_search_engine:
+        print("Indexing and searching Amazon product descriptions...")
+        search_engine = SearchEngine(min_score_threshold=0.05)
+
+        # Convert processed descriptions to a dictionary with doc_ids
+        documents = {i: ' '.join(desc) for i, desc in enumerate(processed_descriptions)}
+        search_engine.index_documents(documents)
+
+        # Perform search and display top results
+        results = search_engine.search(args.query, top_k=args.top_k)
+        print("Top search results:")
+        for doc_id, score in results:
+            print(f"Document ID: {doc_id}, Score: {score}, Description: {' '.join(processed_descriptions[doc_id])}")
 
 
 if __name__ == "__main__":
