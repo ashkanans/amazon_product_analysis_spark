@@ -39,10 +39,17 @@ class SearchEngine:
         """
         # Preprocess documents and prepare them for indexing
         preprocessed_documents = self.preprocess_documents(documents)
-        self.documents = preprocessed_documents  # Store preprocessed documents
 
-        # Build TF-IDF matrix using the preprocessed texts
-        texts = list(preprocessed_documents.values())
+        # Remove duplicates by converting to a set of (id, text) pairs, then back to a dict
+        unique_texts = {}
+        for doc_id, text in preprocessed_documents.items():
+            if text not in unique_texts.values():
+                unique_texts[doc_id] = text
+
+        self.documents = unique_texts  # Store only unique preprocessed documents
+
+        # Build TF-IDF matrix using the unique preprocessed texts
+        texts = list(unique_texts.values())
         self.tfidf_matrix = self.tfidf_vectorizer.fit_transform(texts)
         print("Indexing complete.")
 
