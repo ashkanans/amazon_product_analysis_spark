@@ -5,6 +5,7 @@ from Problem1.analysis.LDAAnalyzer import LDAAnalyzer
 from Problem1.analysis.WordFrequencyAnalyzer import WordFrequencyAnalyzer
 from Problem1.scraping.AmazonScraper import AmazonScraper
 from Problem1.search.SearchEngine import SearchEngine
+from Problem2.SparkPreprocessing import preprocess_with_pyspark
 
 
 def parse_arguments():
@@ -46,7 +47,16 @@ def load_or_scrape_data(args):
             amazon_scraper.load_dataset(args.path)
         else:
             raise FileNotFoundError(f"Dataset file not found at {args.path}")
-    return amazon_scraper.preprocess_descriptions()
+
+    # Preprocess with PySpark if enabled, otherwise use standard processing
+    if args.use_pyspark:
+        print("Preprocessing data with PySpark...")
+        processed_descriptions = preprocess_with_pyspark(amazon_scraper.df)
+    else:
+        print("Preprocessing data with standard processing...")
+        processed_descriptions = amazon_scraper.preprocess_descriptions()
+
+    return processed_descriptions
 
 
 def perform_frequency_analysis(processed_descriptions, args):

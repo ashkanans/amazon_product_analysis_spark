@@ -7,3 +7,4 @@ matplotlib
 gensim
 plotly
 bs4
+pyspark
