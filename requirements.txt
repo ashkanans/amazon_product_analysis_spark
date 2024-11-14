@@ -9,3 +9,5 @@ gensim
 plotly
 bs4
 pyspark
+kaggle
+seaborn
