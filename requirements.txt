@@ -1,0 +1,9 @@
+pandas
+scikit-learn
+requests
+nltk
+numpy
+matplotlib
+gensim
+plotly
+bs4
