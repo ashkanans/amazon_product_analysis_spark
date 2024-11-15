@@ -16,7 +16,6 @@ class LogisticRegressionModel:
     def tune(train_df):
         """Tune Logistic Regression model with hyperparameter grid."""
         lr = LogisticRegression(featuresCol="features", labelCol="label")
-        lr.write().overwrite().save("models/logistic_regression_model")
         paramGrid = (ParamGridBuilder()
                      .addGrid(lr.regParam, [0.01, 0.1, 0.5])
                      .addGrid(lr.elasticNetParam, [0.0, 0.5, 1.0])
