@@ -10,6 +10,7 @@ from pyspark.sql.functions import col, isnan, when, count
 
 class FlightDataAnalyzer:
     def __init__(self, df: DataFrame):
+        self.feature_cols = None
         self.df = df
 
     def check_missing_values(self):
@@ -64,11 +65,12 @@ class FlightDataAnalyzer:
             encoder = OneHotEncoder(inputCol=indexer.getOutputCol(), outputCol=f"{col_name}_Vec")
             stages += [indexer, encoder]
 
-        feature_cols = ["CRS_DEP_TIME", "DISTANCE", "DELAY_DUE_CARRIER",
-                        "DELAY_DUE_WEATHER", "DELAY_DUE_NAS", "DELAY_DUE_SECURITY",
-                        "DELAY_DUE_LATE_AIRCRAFT"] + [f"{col}_Vec" for col in categorical_cols]
+        # Store feature columns for later use
+        self.feature_cols = ["CRS_DEP_TIME", "DISTANCE", "DELAY_DUE_CARRIER",
+                             "DELAY_DUE_WEATHER", "DELAY_DUE_NAS", "DELAY_DUE_SECURITY",
+                             "DELAY_DUE_LATE_AIRCRAFT"] + [f"{col}_Vec" for col in categorical_cols]
 
-        assembler = VectorAssembler(inputCols=feature_cols, outputCol="features")
+        assembler = VectorAssembler(inputCols=self.feature_cols, outputCol="features")
         stages.append(assembler)
 
         pipeline = Pipeline(stages=stages)

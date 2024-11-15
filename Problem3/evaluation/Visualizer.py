@@ -1,4 +1,5 @@
 import matplotlib.pyplot as plt
+import numpy as np
 from sklearn.metrics import roc_curve
 
 
@@ -18,14 +19,13 @@ class Visualizer:
         plt.ylabel("True Positive Rate")
         plt.title("ROC Curve")
         plt.legend()
-        plt.show()
+        plt.show(block=True)
 
     @staticmethod
-    def plot_feature_importances(model):
+    def plot_feature_importances(model, feature_names):
         """Plot feature importances for the Random Forest model."""
-        importances = model.featureImportances.toArray()
-        feature_names = model.featureNames
-        indices = np.argsort(importances)[::-1]
+        importances = model.featureImportances.toArray()  # Get feature importances
+        indices = np.argsort(importances)[::-1]  # Sort feature importances in descending order
 
         plt.figure(figsize=(10, 6))
         plt.bar(range(len(importances)), importances[indices], align="center")
@@ -34,4 +34,4 @@ class Visualizer:
         plt.ylabel("Importance")
         plt.title("Feature Importances (Random Forest)")
         plt.tight_layout()
-        plt.show()
+        plt.show(block=True)
