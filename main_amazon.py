@@ -1,5 +1,4 @@
 import argparse
-
 import os
 import re
 
@@ -8,7 +7,7 @@ from nltk.stem import WordNetLemmatizer
 from nltk.tokenize import word_tokenize
 from pyspark.sql import SparkSession
 from pyspark.sql.functions import udf, col
-from pyspark.sql.types import ArrayType, StringType, Row
+from pyspark.sql.types import ArrayType, StringType
 
 from Problem1.analysis.LDAAnalyzer import LDAAnalyzer
 from Problem1.analysis.WordFrequencyAnalyzer import WordFrequencyAnalyzer
@@ -23,7 +22,7 @@ os.environ["PYSPARK_DRIVER_PYTHON"] = venv_python_path
 
 # Configure Spark to use the virtual environment's Python
 spark = SparkSession.builder \
-    .appName("SparkTest") \
+    .appName("AmazonProductSearch") \
     .master("local[*]") \
     .config("spark.pyspark.python", venv_python_path) \
     .config("spark.pyspark.driver.python", venv_python_path) \
