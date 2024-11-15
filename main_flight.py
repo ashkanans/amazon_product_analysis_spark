@@ -1,5 +1,3 @@
-# main_flight.py
-
 import argparse
 import os
 
@@ -7,11 +5,13 @@ from pyspark.sql import SparkSession
 
 from Problem3.analysis.FlightDataAnalyzer import FlightDataAnalyzer
 from Problem3.data_preparation.FlightDataLoader import FlightDataLoader
+from Problem3.evaluation.ModelEvaluator import ModelEvaluator
+from Problem3.evaluation.Visualizer import Visualizer
+from Problem3.ml_models.LogisticRegressionModel import LogisticRegressionModel
+from Problem3.ml_models.RandomForestModel import RandomForestModel
 
 
 def main(actions, data_path):
-    # 'temp' directory relative to the current working directory (for training Random Forest Model which required
-    # large amount of memory)
     relative_temp_dir = os.path.join(os.getcwd(), "temp")
     os.makedirs(relative_temp_dir, exist_ok=True)
 
@@ -35,233 +35,74 @@ def main(actions, data_path):
         elif action == "load":
             df = loader.load_data(spark)
 
-        elif action == "check_missing":
+        if action == "check_missing":
             if df:
                 analyzer = FlightDataAnalyzer(df)
                 analyzer.check_missing_values()
             else:
                 print("Data not loaded. Please load data before checking for missing values.")
 
-        elif action == "basic_eda":
-            if df:
-                analyzer = FlightDataAnalyzer(df)
-                analyzer.basic_eda()
-            else:
-                print("Data not loaded. Please load data before performing EDA.")
-
-        elif action == "enhanced_comprehensive_eda":
-            if df:
-                analyzer = FlightDataAnalyzer(df)
-                analyzer.enhanced_comprehensive_eda()
-            else:
-                print("Data not loaded. Please load data before performing EDA.")
-
-        elif action == "comprehensive_eda":
-            if df:
-                analyzer = FlightDataAnalyzer(df)
-                analyzer.comprehensive_eda()
-            else:
-                print("Data not loaded. Please load data before performing EDA.")
-
-        elif action == "handle_missing":
-            if df:
-                analyzer = FlightDataAnalyzer(df)
-                df = analyzer.handle_missing_values()
-                print("Missing values handled.")
-            else:
-                print("Data not loaded. Please load data before handling missing values.")
-
-        elif action == "feature_engineering":
-            if df:
-                analyzer = FlightDataAnalyzer(df)
-                df = analyzer.feature_engineering()
-                print("Feature engineering complete.")
-            else:
-                print("Data not loaded. Please load data before feature engineering.")
-
-        elif action == "split_data":
-            if df:
-                analyzer = FlightDataAnalyzer(df)
-                train, test = analyzer.split_data()
-                print("Data split into train and test sets.")
-            else:
-                print("Data not loaded. Please load data before splitting.")
-
-        elif action == "prepare_binary_label":
-            if df:
-                analyzer = FlightDataAnalyzer(df)
-                df = analyzer.prepare_binary_label()
-                print("Binary label for delay classification added.")
-            else:
-                print("Data not loaded. Please load data before preparing binary label.")
-
-        elif action == "train_logistic_regression":
+        elif action == "train_evaluate_logistic_regression":
             if df:
                 analyzer = FlightDataAnalyzer(df)
                 analyzer.handle_missing_values()
                 analyzer.feature_engineering()
                 analyzer.prepare_binary_label()
                 train, test = analyzer.split_data()
-                lr_model = analyzer.train_logistic_regression(train)
-                print("Logistic Regression model training completed.")
+                lr, paramGrid = LogisticRegressionModel.tune(train)
+                best_lr_model = LogisticRegressionModel.cross_validate(train, lr, paramGrid)
+                # LogisticRegressionModel.save_model(best_lr_model, path="models/logistic_regression") # saving does not work on windows
+                predictions = LogisticRegressionModel.predict(best_lr_model, test)
+                ModelEvaluator.evaluate(predictions)
             else:
-                print("Data not loaded. Please load data before training the Logistic Regression model.")
+                print("Data not loaded. Please load data before checking for missing values.")
 
-        elif action == "train_random_forest":
+        elif action == "train_evaluate_random_forest":
             if df:
                 analyzer = FlightDataAnalyzer(df)
                 analyzer.handle_missing_values()
                 analyzer.feature_engineering()
                 analyzer.prepare_binary_label()
                 train, test = analyzer.split_data()
-                rf_model = analyzer.train_random_forest(train)
-                print("Random Forest model training completed.")
+                rf, paramGrid = RandomForestModel.tune(train)
+                best_rf_model = RandomForestModel.cross_validate(train, rf, paramGrid)
+                # RandomForestModel.save_model(best_rf_model, path="models/random_forest") # saving does not work on windows
+                predictions = RandomForestModel.predict(best_rf_model, test)
+                ModelEvaluator.evaluate(predictions)
             else:
-                print("Data not loaded. Please load data before training the Random Forest model.")
-
-        elif action == "tune_logistic_regression":
-            if df:
-                analyzer = FlightDataAnalyzer(df)
-                train, test = analyzer.split_data()
-                lr, paramGrid = analyzer.tune_logistic_regression(train)
-                print("Logistic Regression hyperparameter tuning setup completed.")
-            else:
-                print("Data not loaded. Please load data before tuning the Logistic Regression model.")
-
-        elif action == "tune_random_forest":
-            if df:
-                analyzer = FlightDataAnalyzer(df)
-                train, test = analyzer.split_data()
-                rf, paramGrid = analyzer.tune_random_forest(train)
-                print("Random Forest hyperparameter tuning setup completed.")
-            else:
-                print("Data not loaded. Please load data before tuning the Random Forest model.")
-
-        elif action == "cross_validate_logistic_regression":
-            if df:
-                analyzer = FlightDataAnalyzer(df)
-                train, test = analyzer.split_data()
-                lr, paramGrid = analyzer.tune_logistic_regression(train)
-                best_lr_model = analyzer.cross_validate_model(lr, paramGrid, train)
-                print("Cross-validation for Logistic Regression completed. Best model selected.")
-            else:
-                print("Data not loaded. Please load data before cross-validating the Logistic Regression model.")
-
-        elif action == "cross_validate_random_forest":
-            if df:
-                analyzer = FlightDataAnalyzer(df)
-                train, test = analyzer.split_data()
-                rf, paramGrid = analyzer.tune_random_forest(train)
-                best_rf_model = analyzer.cross_validate_model(rf, paramGrid, train)
-                print("Cross-validation for Random Forest completed. Best model selected.")
-            else:
-                print("Data not loaded. Please load data before cross-validating the Random Forest model.")
-
-        elif action == "predict_with_logistic_regression":
-            if df:
-                analyzer = FlightDataAnalyzer(df)
-                train, test = analyzer.split_data()
-                lr, paramGrid = analyzer.tune_logistic_regression(train)
-                best_lr_model = analyzer.cross_validate_model(lr, paramGrid, train)
-                predictions = analyzer.predict_with_logistic_regression(best_lr_model, test)
-                print("Predictions with Logistic Regression model completed.")
-            else:
-                print("Data not loaded. Please load data before making predictions with the Logistic Regression model.")
-
-        elif action == "predict_with_random_forest":
-            if df:
-                analyzer = FlightDataAnalyzer(df)
-                train, test = analyzer.split_data()
-                rf, paramGrid = analyzer.tune_random_forest(train)
-                best_rf_model = analyzer.cross_validate_model(rf, paramGrid, train)
-                predictions = analyzer.predict_with_random_forest(best_rf_model, test)
-                print("Predictions with Random Forest model completed.")
-            else:
-                print("Data not loaded. Please load data before making predictions with the Random Forest model.")
-
-        elif action == "evaluate_logistic_regression":
-            if df:
-                analyzer = FlightDataAnalyzer(df)
-                analyzer.handle_missing_values()
-                analyzer.feature_engineering()
-                analyzer.prepare_binary_label()
-                train, test = analyzer.split_data(1, 1)
-                lr, paramGrid = analyzer.tune_logistic_regression(train)
-                best_lr_model = analyzer.cross_validate_model(lr, paramGrid, train)
-                predictions = analyzer.predict_with_logistic_regression(best_lr_model, test)
-                analyzer.evaluate_model(predictions)
-                print("Evaluation of Logistic Regression model completed.")
-            else:
-                print("Data not loaded. Please load data before evaluating the Logistic Regression model.")
-
-        elif action == "evaluate_random_forest":
-            if df:
-                analyzer = FlightDataAnalyzer(df)
-                analyzer.handle_missing_values()
-                analyzer.feature_engineering()
-                analyzer.prepare_binary_label()
-                train, test = analyzer.split_data()
-                rf, paramGrid = analyzer.tune_random_forest(train)
-                best_rf_model = analyzer.cross_validate_model(rf, paramGrid, train)
-                predictions = analyzer.predict_with_random_forest(best_rf_model, test)
-                analyzer.evaluate_model(predictions)
-                print("Evaluation of Random Forest model completed.")
-            else:
-                print("Data not loaded. Please load data before evaluating the Random Forest model.")
+                print("Data not loaded. Please load data before checking for missing values.")
 
         elif action == "plot_roc_curve_logistic_regression":
             if df:
                 analyzer = FlightDataAnalyzer(df)
                 train, test = analyzer.split_data()
-                lr, paramGrid = analyzer.tune_logistic_regression(train)
-                best_lr_model = analyzer.cross_validate_model(lr, paramGrid, train)
-                analyzer.plot_roc_curve(best_lr_model, test)
-                print("ROC curve plotted for Logistic Regression.")
+                lr, paramGrid = LogisticRegressionModel.tune(train)
+                best_lr_model = LogisticRegressionModel.cross_validate(train, lr, paramGrid)
+                Visualizer.plot_roc_curve(best_lr_model, test)
             else:
-                print("Data not loaded. Please load data before plotting ROC curve for Logistic Regression.")
-
-        elif action == "plot_roc_curve_random_forest":
-            if df:
-                analyzer = FlightDataAnalyzer(df)
-                train, test = analyzer.split_data()
-                rf, paramGrid = analyzer.tune_random_forest(train)
-                best_rf_model = analyzer.cross_validate_model(rf, paramGrid, train)
-                analyzer.plot_roc_curve(best_rf_model, test)
-                print("ROC curve plotted for Random Forest.")
-            else:
-                print("Data not loaded. Please load data before plotting ROC curve for Random Forest.")
+                print("Data not loaded. Please load data before checking for missing values.")
 
         elif action == "plot_feature_importances_random_forest":
             if df:
                 analyzer = FlightDataAnalyzer(df)
                 train, test = analyzer.split_data()
-                rf, paramGrid = analyzer.tune_random_forest(train)
-                best_rf_model = analyzer.cross_validate_model(rf, paramGrid, train)
-                analyzer.plot_feature_importances(best_rf_model)
-                print("Feature importances plotted for Random Forest.")
+                rf, paramGrid = RandomForestModel.tune(train)
+                best_rf_model = RandomForestModel.cross_validate(train, rf, paramGrid)
+                Visualizer.plot_feature_importances(best_rf_model)
             else:
-                print("Data not loaded. Please load data before plotting feature importances.")
+                print("Data not loaded. Please load data before checking for missing values.")
 
-        elif action == "plot_data_distributions":
-            if df:
-                analyzer = FlightDataAnalyzer(df)
-                analyzer.plot_data_distributions()
-                print("Data distributions plotted.")
-            else:
-                print("Data not loaded. Please load data before plotting data distributions.")
         else:
             print(f"Unknown action: {action}")
 
-    # Stop the Spark session
     spark.stop()
 
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Flight delay prediction data handling")
 
-    # Accept a space-separated list of actions
     parser.add_argument("actions", nargs="+", type=str,
-                        help="List of actions to perform (e.g., load check_missing basic_eda).")
+                        help="List of actions to perform (e.g., load check_missing handle_missing).")
     parser.add_argument("--data_path", type=str, default="data/raw/flights_sample_3m.csv",
                         help="Path to the data file.")
 

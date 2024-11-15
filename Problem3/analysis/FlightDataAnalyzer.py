@@ -2,12 +2,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
 from pyspark.ml import Pipeline
-from pyspark.ml.classification import LogisticRegression, RandomForestClassifier
-from pyspark.ml.evaluation import BinaryClassificationEvaluator
-from pyspark.ml.evaluation import MulticlassClassificationEvaluator
 from pyspark.ml.feature import StringIndexer, OneHotEncoder, VectorAssembler
-from pyspark.ml.tuning import CrossValidator
-from pyspark.ml.tuning import ParamGridBuilder
 from pyspark.sql import DataFrame
 from pyspark.sql import functions as F
 from pyspark.sql.functions import col, isnan, when, count
@@ -28,182 +23,6 @@ class FlightDataAnalyzer:
             ]
         )
         missing_counts.show()
-
-    def plot_roc_curve(self, model, test_df):
-        """Plot the ROC curve for the given model on the test set."""
-        # Generate predictions and extract probabilities for ROC curve
-        predictions = model.transform(test_df)
-        results = predictions.select("label", "probability").toPandas()
-        results["probability"] = results["probability"].apply(lambda x: x[1])
-
-        # Calculate ROC curve
-        from sklearn.metrics import roc_curve
-        fpr, tpr, _ = roc_curve(results["label"], results["probability"])
-
-        # Plot ROC curve
-        plt.figure(figsize=(8, 6))
-        plt.plot(fpr, tpr, color="blue", label="ROC Curve")
-        plt.plot([0, 1], [0, 1], color="red", linestyle="--")
-        plt.xlabel("False Positive Rate")
-        plt.ylabel("True Positive Rate")
-        plt.title("ROC Curve")
-        plt.legend()
-        plt.show()
-
-    def plot_feature_importances(self, model):
-        """Plot feature importances for the Random Forest model."""
-        importances = model.featureImportances.toArray()
-        feature_names = model.featureNames
-        indices = np.argsort(importances)[::-1]
-
-        plt.figure(figsize=(10, 6))
-        plt.bar(range(len(importances)), importances[indices], align="center")
-        plt.xticks(range(len(importances)), [feature_names[i] for i in indices], rotation=90)
-        plt.xlabel("Feature")
-        plt.ylabel("Importance")
-        plt.title("Feature Importances (Random Forest)")
-        plt.tight_layout()
-        plt.show()
-
-    def plot_data_distributions(self):
-        """Visualize distributions of delay data and relevant columns."""
-        # Convert necessary columns to Pandas for visualization
-        dep_delay_df = self.df.select("DEP_DELAY").dropna().toPandas()
-        arr_delay_df = self.df.select("ARR_DELAY").dropna().toPandas()
-
-        # Plot distributions
-        plt.figure(figsize=(12, 6))
-        sns.histplot(dep_delay_df["DEP_DELAY"], kde=True, bins=30, color="skyblue").set_title(
-            "Departure Delay Distribution")
-        plt.xlabel("Minutes")
-        plt.show()
-
-        plt.figure(figsize=(12, 6))
-        sns.histplot(arr_delay_df["ARR_DELAY"], kde=True, bins=30, color="salmon").set_title(
-            "Arrival Delay Distribution")
-        plt.xlabel("Minutes")
-        plt.show()
-
-    def prepare_binary_label(self):
-        """Add a binary label column for flights delayed by more than 15 minutes at departure."""
-        self.df = self.df.withColumn("label", F.when(F.col("DEP_DELAY") > 15.0, 1).otherwise(0))
-        print("Added binary label column for departure delay classification.")
-        return self.df
-
-    def tune_logistic_regression(self, train_df):
-        """Tune Logistic Regression model with hyperparameter grid."""
-        lr = LogisticRegression(featuresCol="features", labelCol="label")
-
-        # Define the hyperparameter grid
-        paramGrid = (ParamGridBuilder()
-                     .addGrid(lr.regParam, [0.01, 0.1, 0.5])
-                     .addGrid(lr.elasticNetParam, [0.0, 0.5, 1.0])  # 0.0=L2, 1.0=L1, 0.5=Elastic Net
-                     .build())
-
-        print("Logistic Regression hyperparameter grid defined.")
-        return lr, paramGrid
-
-    def cross_validate_model(self, model, paramGrid, train_df):
-        """Perform cross-validation with BinaryClassificationEvaluator and return the best model."""
-        evaluator = BinaryClassificationEvaluator(labelCol="label", metricName="areaUnderROC")
-
-        # Set up cross-validator
-        crossval = CrossValidator(
-            estimator=model,
-            estimatorParamMaps=paramGrid,
-            evaluator=evaluator,
-            numFolds=5
-        )
-
-        # Perform cross-validation and get the best model
-        cv_model = crossval.fit(train_df)
-        print("Cross-validation completed. Best model selected based on AUC.")
-
-        return cv_model.bestModel
-
-    def tune_random_forest(self, train_df):
-        """Tune Random Forest model with hyperparameter grid."""
-        rf = RandomForestClassifier(featuresCol="features", labelCol="label")
-
-        # Define the hyperparameter grid
-        paramGrid = (ParamGridBuilder()
-                     .addGrid(rf.numTrees, [20, 50, 100])
-                     .addGrid(rf.maxDepth, [5, 10, 15])
-                     .build())
-
-        print("Random Forest hyperparameter grid defined.")
-        return rf, paramGrid
-
-    def train_logistic_regression(self, train_df):
-        """Train a Logistic Regression model."""
-        lr = LogisticRegression(featuresCol="features", labelCol="label")
-        lr_model = lr.fit(train_df)
-        print("Logistic Regression model trained.")
-        return lr_model
-
-    def train_random_forest(self, train_df):
-        """Train a Random Forest Classifier model."""
-        rf = RandomForestClassifier(featuresCol="features", labelCol="label")
-        rf_model = rf.fit(train_df)
-        print("Random Forest model trained.")
-        return rf_model
-
-    def basic_eda(self):
-        """Perform basic EDA including summary statistics and distributions."""
-        print("Basic statistics of numerical columns:")
-        self.df.describe().show()
-
-        # Plot distributions of delay times
-        dep_delay_df = self.df.select("DEP_DELAY").dropna().toPandas()
-        arr_delay_df = self.df.select("ARR_DELAY").dropna().toPandas()
-
-        # Plot histogram of departure and arrival delays
-        plt.figure(figsize=(10, 5))
-        sns.histplot(dep_delay_df["DEP_DELAY"], kde=True, bins=30).set_title("Departure Delay Distribution")
-        plt.xlabel("Minutes")
-        plt.show(block=True)
-
-        plt.figure(figsize=(10, 5))
-        sns.histplot(arr_delay_df["ARR_DELAY"], kde=True, bins=30).set_title("Arrival Delay Distribution")
-        plt.xlabel("Minutes")
-        plt.show(block=True)
-
-    def predict_with_logistic_regression(self, best_lr_model, test_df):
-        """Use the best Logistic Regression model to make predictions on the test set."""
-        predictions = best_lr_model.transform(test_df)
-        print("Predictions made with Logistic Regression model.")
-        return predictions
-
-    def predict_with_random_forest(self, best_rf_model, test_df):
-        """Use the best Random Forest model to make predictions on the test set."""
-        predictions = best_rf_model.transform(test_df)
-        print("Predictions made with Random Forest model.")
-        return predictions
-
-    def evaluate_model(self, predictions):
-        """Evaluate the model's performance on the test set and print key metrics."""
-        # Binary Classification Evaluator for AUC
-        binary_evaluator = BinaryClassificationEvaluator(labelCol="label", metricName="areaUnderROC")
-        auc = binary_evaluator.evaluate(predictions)
-
-        # Multiclass Classification Evaluator for accuracy, precision, recall, and F1-score
-        evaluator = MulticlassClassificationEvaluator(labelCol="label", predictionCol="prediction")
-        accuracy = evaluator.evaluate(predictions, {evaluator.metricName: "accuracy"})
-        precision = evaluator.evaluate(predictions, {evaluator.metricName: "weightedPrecision"})
-        recall = evaluator.evaluate(predictions, {evaluator.metricName: "weightedRecall"})
-        f1 = evaluator.evaluate(predictions, {evaluator.metricName: "f1"})
-
-        print(f"Model Evaluation Metrics:")
-        print(f"AUC: {auc}")
-        print(f"Accuracy: {accuracy}")
-        print(f"Precision: {precision}")
-        print(f"Recall: {recall}")
-        print(f"F1-score: {f1}")
-
-        # Confusion Matrix
-        confusion_matrix = predictions.groupBy("label", "prediction").count().orderBy("label", "prediction")
-        print("Confusion Matrix:")
-        confusion_matrix.show()
 
     def handle_missing_values(self):
         """Handle missing values by imputing or dropping based on analysis of column importance and data structure."""
@@ -232,26 +51,19 @@ class FlightDataAnalyzer:
 
     def feature_engineering(self):
         """Select features, convert categorical columns, and assemble features for modeling."""
-
-        # Columns to keep for modeling
         necessary_cols = ["CRS_DEP_TIME", "DISTANCE", "AIRLINE", "ORIGIN", "DEST",
                           "DELAY_DUE_CARRIER", "DELAY_DUE_WEATHER", "DELAY_DUE_NAS",
                           "DELAY_DUE_SECURITY", "DELAY_DUE_LATE_AIRCRAFT"]
-
-        # Filter DataFrame to include only necessary columns
         self.df = self.df.select(*necessary_cols, "DEP_DELAY")
 
-        # Convert categorical columns using StringIndexer and OneHotEncoder
         categorical_cols = ["AIRLINE", "ORIGIN", "DEST"]
         stages = []
 
         for col_name in categorical_cols:
-            # StringIndexer for categorical features
             indexer = StringIndexer(inputCol=col_name, outputCol=f"{col_name}_Index")
             encoder = OneHotEncoder(inputCol=indexer.getOutputCol(), outputCol=f"{col_name}_Vec")
             stages += [indexer, encoder]
 
-        # Assemble features
         feature_cols = ["CRS_DEP_TIME", "DISTANCE", "DELAY_DUE_CARRIER",
                         "DELAY_DUE_WEATHER", "DELAY_DUE_NAS", "DELAY_DUE_SECURITY",
                         "DELAY_DUE_LATE_AIRCRAFT"] + [f"{col}_Vec" for col in categorical_cols]
@@ -259,13 +71,16 @@ class FlightDataAnalyzer:
         assembler = VectorAssembler(inputCols=feature_cols, outputCol="features")
         stages.append(assembler)
 
-        # Create and apply the pipeline
         pipeline = Pipeline(stages=stages)
         pipeline_model = pipeline.fit(self.df)
         self.df = pipeline_model.transform(self.df)
-
-        # Select only necessary columns for modeling
         self.df = self.df.select("features", "DEP_DELAY")
+        return self.df
+
+    def prepare_binary_label(self):
+        """Add a binary label column for flights delayed by more than 15 minutes at departure."""
+        self.df = self.df.withColumn("label", F.when(F.col("DEP_DELAY") > 15.0, 1).otherwise(0))
+        print("Added binary label column for departure delay classification.")
         return self.df
 
     def split_data(self, train_sample_fraction=0.5, test_sample_fraction=0.5):
@@ -276,7 +91,6 @@ class FlightDataAnalyzer:
         test = test.sample(fraction=test_sample_fraction, seed=42)
 
         print("Split data into training and testing sets.")
-        # Check the distribution of labels in train and test sets
         train_distribution = train.groupBy("label").count()
         test_distribution = test.groupBy("label").count()
 
@@ -287,6 +101,26 @@ class FlightDataAnalyzer:
         test_distribution.show()
 
         return train, test
+
+    def basic_eda(self):
+        """Perform basic EDA including summary statistics and distributions."""
+        print("Basic statistics of numerical columns:")
+        self.df.describe().show()
+
+        # Plot distributions of delay times
+        dep_delay_df = self.df.select("DEP_DELAY").dropna().toPandas()
+        arr_delay_df = self.df.select("ARR_DELAY").dropna().toPandas()
+
+        # Plot histogram of departure and arrival delays
+        plt.figure(figsize=(10, 5))
+        sns.histplot(dep_delay_df["DEP_DELAY"], kde=True, bins=30).set_title("Departure Delay Distribution")
+        plt.xlabel("Minutes")
+        plt.show(block=True)
+
+        plt.figure(figsize=(10, 5))
+        sns.histplot(arr_delay_df["ARR_DELAY"], kde=True, bins=30).set_title("Arrival Delay Distribution")
+        plt.xlabel("Minutes")
+        plt.show(block=True)
 
     def enhanced_comprehensive_eda(self):
         """Enhanced EDA with additional statistical insights and visualizations."""
