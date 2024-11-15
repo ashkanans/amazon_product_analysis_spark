@@ -268,9 +268,13 @@ class FlightDataAnalyzer:
         self.df = self.df.select("features", "DEP_DELAY")
         return self.df
 
-    def split_data(self):
+    def split_data(self, train_sample_fraction=0.5, test_sample_fraction=0.5):
         """Split data into training and testing sets."""
         train, test = self.df.randomSplit([0.8, 0.2], seed=42)
+
+        train = train.sample(fraction=train_sample_fraction, seed=42)
+        test = test.sample(fraction=test_sample_fraction, seed=42)
+
         print("Split data into training and testing sets.")
         # Check the distribution of labels in train and test sets
         train_distribution = train.groupBy("label").count()

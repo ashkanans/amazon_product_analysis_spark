@@ -1,6 +1,7 @@
 # main_flight.py
 
 import argparse
+import os
 
 from pyspark.sql import SparkSession
 
@@ -9,19 +10,22 @@ from Problem3.data_preparation.FlightDataLoader import FlightDataLoader
 
 
 def main(actions, data_path):
-    # Initialize Spark session
+    # 'temp' directory relative to the current working directory (for training Random Forest Model which required
+    # large amount of memory)
+    relative_temp_dir = os.path.join(os.getcwd(), "temp")
+    os.makedirs(relative_temp_dir, exist_ok=True)
+
     spark = (SparkSession.builder.
              appName("FlightDelayPrediction")
-             .config("spark.executor.memory", "8g")
+             .config("spark.local.dir", relative_temp_dir)
+             .config("spark.executor.memory", "12g")
              .config("spark.driver.memory", "8g")
              .config("spark.memory.fraction", "0.8")
              .getOrCreate())
 
-    # Initialize data loader and data frame
     loader = FlightDataLoader()
     df = None
 
-    # Loop through actions and execute each one
     for action in actions:
         print(f"Executing action: {action}")
 
@@ -181,7 +185,7 @@ def main(actions, data_path):
                 analyzer.handle_missing_values()
                 analyzer.feature_engineering()
                 analyzer.prepare_binary_label()
-                train, test = analyzer.split_data()
+                train, test = analyzer.split_data(1, 1)
                 lr, paramGrid = analyzer.tune_logistic_regression(train)
                 best_lr_model = analyzer.cross_validate_model(lr, paramGrid, train)
                 predictions = analyzer.predict_with_logistic_regression(best_lr_model, test)
