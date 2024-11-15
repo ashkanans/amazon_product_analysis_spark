@@ -1,6 +1,8 @@
 
 # Product Search and Flight Delay Prediction
 
+---
+
 ## Project Description
 
 This project is divided into three main problems:
@@ -8,6 +10,8 @@ This project is divided into three main problems:
 1. **Amazon Product Search**: Download, preprocess, and analyze product data from Amazon. Build a search engine using an inverted index and cosine similarity.
 2. **Spark Implementation of Problem 1**: Implement the same functionality as stated in 1 using Apache Spark.
 3. **Flight Delay Prediction**: Use PySpark’s MLlib to build, tune, and evaluate machine learning models predicting flight delays.
+
+---
 
 ## Project Structure
 
@@ -59,12 +63,11 @@ product_search_and_flight_delay_ml/
 │   ├── test_lda_analyzer.py
 │   ├── test_flight_data_loader.py
 │   └── ...
-├── utils/
-│   ├── data_loader.py
-│   └── plot_utils.py
 ├── LICENSE
 ├── README.md
 ├── main_amazon.py
 ├── main_flight.py
 ├── requirements.txt
 ```
+
+---
