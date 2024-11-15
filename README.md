@@ -276,13 +276,13 @@ Top trigrams by frequency: [(('libre_off', 'pronto', 'alluso'), 5), ('notebook',
 **Visualizations**:
 
 - **Top 10 Most Common Words**:
-  ![Top 10 Most Common Words](./files/1.%20amazon%20prodcut%20search/Top%2010%20Most%20Common%20Words.png)
+  ![Top 10 Most Common Words](files/1.%20amazon%20prodcut%20search%20(without%20Spark)/Top%2010%20Most%20Common%20Words.png)
 
 - **Top 10 Most Common Bigrams**:
-  ![Top 10 Most Common Bigrams](./files/1.%20amazon%20prodcut%20search/Top%2010%20Most%20Common%20Bigrams.png)
+  ![Top 10 Most Common Bigrams](files/1.%20amazon%20prodcut%20search%20(without%20Spark)/Top%2010%20Most%20Common%20Bigrams.png)
 
 - **Top 10 Most Common Trigrams**:
-  ![Top 10 Most Common Trigrams](./files/1.%20amazon%20prodcut%20search/Top%2010%20Most%20Common%20Trigrams.png)
+  ![Top 10 Most Common Trigrams](files/1.%20amazon%20prodcut%20search%20(without%20Spark)/Top%2010%20Most%20Common%20Trigrams.png)
 
 These images illustrate the most frequent words, bigrams, and trigrams found in the product descriptions.
 
@@ -312,7 +312,7 @@ Topic 2: 0.035*"intel" + 0.027*"wifi" + ...
 **Visualization**:
 
 - **LDA Topic Modeling**:
-  ![LDA Topic Modeling](./files/1.%20amazon%20prodcut%20search/LDA%20topic%20modeling.png)
+  ![LDA Topic Modeling](files/1.%20amazon%20prodcut%20search%20(without%20Spark)/LDA%20topic%20modeling.png)
 
 This image visualizes the extracted topics and their top words.
 
@@ -350,9 +350,122 @@ The command displays the top 5 search results with their relevance scores and de
   from `data/raw/computer_results_default.tsv`.
 - Use the `--top_k` flag to specify the number of search results returned.
 
----
-
-By following these commands, you can run the complete Amazon Product Search analysis, from data scraping and loading to
-word analysis, topic modeling, and search functionality.
 
 ---
+
+### Spark Implementation of Amazon Product Search
+
+Assume we have scraped the products using the commands described in [Scraping Data](#1-scraping-data) section.  
+So, we have a `.tsv` file in the `data/raw` directory. We call it our "default" scraped data.
+
+To incorporate Spark into the previous task, we can do 2 main things:
+
+1. **Use Spark to Preprocess the Data**  
+   Spark's distributed capabilities allow us to preprocess product descriptions efficiently, even for large datasets.
+   The preprocessing steps include tokenization, removal of stopwords, lemmatization, and more, as defined in
+   the `preprocess_with_pyspark` function.
+
+   **Implementation Steps:**
+    - Convert the product dataset into a Spark DataFrame.
+    - Apply text preprocessing using Spark's UDFs combined with NLTK.
+    - Export the processed descriptions for downstream tasks.
+
+   **Code Reference:** `SparkPreprocessing.py` provides the implementation of these preprocessing functions using
+   PySpark and NLTK.
+
+2. **Use Spark to Build the Search Engine**  
+   Using Spark for building a search engine involves indexing product descriptions and efficiently handling queries.
+   This is done using:
+    - TF-IDF for feature extraction.
+    - Cosine similarity for query matching.
+    - An inverted index for optimizing search performance.
+
+   **Implementation Steps:**
+    - Tokenize and preprocess product descriptions.
+    - Use Spark MLlib's TF-IDF implementation to transform tokens into numerical vectors.
+    - Calculate cosine similarity between query vectors and product vectors to rank search results.
+
+   **Code Reference:** The class `SparkSearchEngine` in `SparkSearchEngine.py` provides an implementation of these
+   features.
+
+---
+
+---
+
+### Commands and Examples
+
+Below are some example commands for various tasks, along with sample output and images of results.
+
+#### 1. **Using Spark to Preprocess and Search the Data**
+
+To preprocess and search the data using Spark, use the following command:
+
+```bash
+python main_amazon.py --use_pyspark --run_search --keyword "laptop, pc" --query "HP Notebook G9 Intel i3-1215u 6 Core 4,4 Ghz 15,6 Full Hd, Ram 16Gb Ddr4, Ssd Nvme 756Gb M2, Hdmi, Usb 3.0, Wifi, Lan,Bluetooth, Webcam, Windows 11 Professional,Libre Office" --top_k 5
+```
+
+**Output:**
+
+```
+Loading Amazon data from data/raw/computer_results_default.tsv...
+Data loaded successfully.
+Preprocessing data with PySpark...
+Using Spark for search and indexing...
+Top search results:
+Document ID: 371, Score: 0.5037001371383667, Description: hp notebook g9 intel i31215u 6 core 44 ghz 156 full hd ram 16gb ddr4 ssd nvme 756gb m2 hdmi usb 30 wifi lan bluetooth webcam window 11 professional libre office
+Document ID: 6, Score: 0.5037001371383667, Description: hp notebook g9 intel i31215u 6 core 44 ghz 156 full hd ram 16gb ddr4 ssd nvme 756gb m2 hdmi usb 30 wifi lan bluetooth webcam window 11 professional libre office
+Document ID: 655, Score: 0.5037001371383667, Description: hp notebook g9 intel i31215u 6 core 44 ghz 156 full hd ram 16gb ddr4 ssd nvme 756gb m2 hdmi usb 30 wifi lan bluetooth webcam window 11 professional libre office
+Document ID: 147, Score: 0.4100857973098755, Description: notebook hp g9 intel i31215u 6 core 44 ghz 156 full hd ram 8gb ddr4 ssd nvme 256gb m2 hdmi usb 30 wifi lan bluetooth webcam window 11 professional libre office
+Document ID: 436, Score: 0.4100857973098755, Description: notebook hp g9 intel i31215u 6 core 44 ghz 156 full hd ram 8gb ddr4 ssd nvme 256gb m2 hdmi usb 30 wifi lan bluetooth webcam window 11 professional libre office
+```
+
+#### 2. **Analyzing Word, Bigram, and Trigram Frequencies**
+
+To generate the most common words, bigrams, and trigrams, use the following command:
+
+```bash
+python main_amazon.py --use_pyspark --keyword "laptop, pc" --plot_frequency --top_words 10 --top_bigrams 10 --top_trigrams 10
+```
+
+**Output:**
+
+```
+Top 10 Most Common Words**: [('pc', 561), ('ssd', 557), ('ram', 496), ('11', 427), ('pro', 414), ('computer', 397), ('window', 366), ('amd', 342), ('intel', 330), ('core', 319)]
+Top 10 Most Common Bigrams**: [(('window', '11'), 276), (('intel', 'core'), 239), (('11', 'pro'), 237), (('pc', 'portatile'), 229), (('amd', 'ryzen'), 222), (('display', '156'), 183), (('core', 'i5'), 167), (('1', 'tb'), 157), (('win', '11'), 151), (('ryzen', '5'), 146)]
+Top 10 Most Common Trigrams**: [(('intel', 'core', 'i5'), 163), (('amd', 'ryzen', '5'), 146), (('156', 'full', 'hd'), 137), (('window', '11', 'pro'), 134), (('processore', 'amd', 'ryzen'), 118), (('core', 'i5', '12th'), 103), (('display', '156', 'full'), 103), (('win', '11', 'pro'), 103), (('da', '1', 'tb'), 103), (('window', '11', 'home'), 102)]
+```
+
+**Images:**
+
+- ![Top 10 Most Common Words](files/2.%20amazon%20prodcut%20search%20(using%20Spark)/Top%2010%20Most%20Common%20Words.png)
+- ![Top 10 Most Common Bigrams](files/2.%20amazon%20prodcut%20search%20(using%20Spark)/Top%2010%20Most%20Common%20Bigrams.png)
+- ![Top 10 Most Common Trigrams](files/2.%20amazon%20prodcut%20search%20(using%20Spark)/Top%2010%20Most%20Common%20Trigrams.png)
+
+#### 3. **Running LDA Topic Modeling**
+
+To perform topic modeling on the data using LDA, run the following command:
+
+```bash
+python main_amazon.py --use_pyspark --keyword "laptop, pc" --run_lda --num_topics 5 --passes 15
+```
+
+**Output:**
+
+```
+Loading Amazon data from data/raw/computer_results_default.tsv...
+Data loaded successfully.
+Preprocessing data with PySpark...
+Running LDA topic modeling...
+Topic 1: 0.043*"da" + 0.036*"pro" + 0.035*"wifi" + 0.033*"gb" + 0.033*"1" + 0.033*"tb" + 0.031*"intel" + 0.027*"hdmi" + 0.024*"core" + 0.022*"fisso"
+Topic 2: 0.038*"1tb" + 0.036*"mini" + 0.030*"mouse" + 0.027*"tastiera" + 0.024*"portatile" + 0.023*"wifi" + 0.023*"pollici" + 0.022*"win" + 0.022*"notebook" + 0.022*"14"
+Topic 3: 0.058*"pro" + 0.043*"intel" + 0.037*"hp" + 0.035*"i5" + 0.035*"core" + 0.034*"250" + 0.034*"portatile" + 0.028*"16gb" + 0.026*"office" + 0.026*"g9"
+Topic 4: 0.063*"amd" + 0.042*"gb" + 0.037*"processore" + 0.032*"radeon" + 0.032*"ddr5" + 0.032*"ryzen" + 0.031*"8" + 0.027*"home" + 0.027*"display" + 0.021*"mini"
+Topic 5: 0.124*"scrivania" + 0.075*"con" + 0.050*"per" + 0.050*"di" + 0.050*"cm" + 0.026*"mouse" + 0.025*"156" + 0.025*"led" + 0.025*"desktop" + 0.025*"gaming"
+```
+
+**Image:**
+
+- ![LDA topic modeling](files/2.%20amazon%20prodcut%20search%20(using%20Spark)/LDA%20topic%20modeling.png)
+
+---
+
