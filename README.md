@@ -187,109 +187,172 @@ Key Features:
 
 ---
 
-**Commands and Examples**
-
-1. **Scraping Data**:
-   To scrape Amazon products for specific keywords (e.g., "laptop, pc") and save the results:
-   ```bash
-   python main_amazon.py --scrape --keyword "laptop, pc" --num_pages 3
-   ```
-   - Scrapes the first 3 pages for each keyword.
-   - Saves the results in a `.tsv` file in `data/raw/`.
-
-2. **Loading Existing Data**:
-   To load pre-scraped data from a specific file:
-   ```bash
-   python main_amazon.py --path data/raw/laptop_results_2024-11-15.tsv --keyword "laptop, pc"
-   ```
-   - The program reads the data and preprocesses product descriptions.
-
-3. **Word Frequency Analysis**:
-   To analyze and visualize word, bigram, and trigram frequencies:
-   ```bash
-   python main_amazon.py --path data/raw/laptop_results_2024-11-15.tsv --plot_frequency --top_words 10 --top_bigrams 10 --top_trigrams 10
-   ```
-   - Displays and plots the top 10 most frequent words, bigrams, and trigrams.
-   #### Top 10 Most Common Words
-   ![Top 10 Most Common Words](./files/1.%20amazon%20prodcut%20search/Top%2010%20Most%20Common%20Words.png)
-
-   #### Top 10 Most Common Bigrams
-   ![Top 10 Most Common Bigrams](./files/1.%20amazon%20prodcut%20search/Top%2010%20Most%20Common%20Bigrams.png)
-
-   #### Top 10 Most Common Trigrams
-   ![Top 10 Most Common Trigrams](./files/1.%20amazon%20prodcut%20search/Top%2010%20Most%20Common%20Trigrams.png)
-
-4. **Topic Modeling (LDA)**:
-   To perform LDA topic modeling on the dataset:
-   ```bash
-   python main_amazon.py --path data/raw/laptop_results_2024-11-15.tsv --run_lda --num_topics 5 --passes 15
-   ```
-   - Extracts 5 topics from the dataset with 15 training passes.
-   - Displays top words for each topic and visualizes topic distributions.
-
-5. **Search Functionality**:
-   To search for products matching specific queries:
-   ```bash
-   python main_amazon.py --run_search --keyword "laptop, pc" --query "Intel Core i7 SSD HD Ram 16Gb" --top_k 5
-   ```
-   - Displays the top 5 products most relevant to the query based on cosine similarity.
-
-   Example result:
-   ```
-   Top search results:
-   Document ID: 5, Score: 0.2735, Description: pc fisso computer desktop intel_core_i7 intel hd masterizz wifi interno ...
-   Document ID: 173, Score: 0.1756, Description: jumper computer portatile hd display office_365 ...
-   ```
-
-6. **Default Behavior**:
-   If no `--path` option is specified, the program defaults to loading `data/raw/computer_results_default.tsv`:
-   ```bash
-   python main_amazon.py --run_search --query "HP Notebook G9 Intel i3" --top_k 5
-   ```
+Here's an improved **Commands and Examples** section that presents each command clearly with sample console output and
+relevant images. This structure consolidates information and provides a clear, sequential guide for running each
+command.
 
 ---
 
-**Options and Flags**:
+### Commands and Examples
 
-- `--scrape`: Scrape Amazon for new data using specified keywords and pages.
-- `--path`: Specify a path to a `.tsv` file with pre-scraped data.
-- `--plot_frequency`: Generate word, bigram, and trigram frequency visualizations.
-- `--run_lda`: Perform LDA topic modeling with configurable topics and passes.
-- `--run_search`: Search for products matching a query string.
-- `--top_k`: Specify the number of top search results to return.
-
-**Code Reference**: Refer to `main_amazon.py` for the complete CLI implementation.
+The following commands illustrate various functionalities for the Amazon Product Search task. Each command includes
+sample console output and images demonstrating the results.
 
 ---
 
-**Example Workflow**:
+#### 1. Scraping Data
 
-1. Scrape data:
-   ```bash
-   python main_amazon.py --scrape --keyword "laptop, pc" --num_pages 3
-   ```
-2. Visualize word frequency:
-   ```bash
-   python main_amazon.py --path data/raw/laptop_results_2024-11-15.tsv --plot_frequency --top_words 10
-   ```
-   ![Top 10 Most Common Words](./files/1.%20amazon%20prodcut%20search/Top%2010%20Most%20Common%20Words.png)
+To scrape Amazon products for specific keyword(s) (e.g., "laptop, pc") and save the results to a `.tsv` file:
 
-3. Run topic modeling:
-   ```bash
-   python main_amazon.py --path data/raw/laptop_results_2024-11-15.tsv --run_lda --num_topics 5
-   ```
-   ![LDA Topic Modeling](./files/1.%20amazon%20prodcut%20search/LDA%20topic%20modeling.png)
+```bash
+python main_amazon.py --scrape --keyword "laptop, pc" --num_pages 3
+```
 
-4. Search products:
-   ```bash
-   python main_amazon.py --path data/raw/laptop_results_2024-11-15.tsv --run_search --query "Intel Core i7 SSD HD" --top_k 5
-   ```
+**Console Output**:
+
+```
+Scraping Amazon products...
+Scraping keyword laptop...
+Scraping page 1...
+Scraping page 2...
+Scraping page 3...
+216 products found
+Scraping keyword pc...
+Scraping page 1...
+Scraping page 2...
+Scraping page 3...
+432 products found
+Data saved to file: data/raw/laptop_results_2024-11-15.tsv
+```
+
+This command scrapes 3 pages of results for each keyword ("laptop" and "pc") and saves them
+in `data/raw/laptop_results_2024-11-15.tsv`.
+
+The naming convetion for this tsv file is: <first_keyword>_<current_date>
 
 ---
 
-#### Deliverables
+#### 2. Loading and Preprocessing Existing Data
 
-1. **Scraped Data**: Stored in `data/raw/computer_results_default.tsv`.
-2. **Indexed Data**: Preprocessed descriptions indexed for searching.
-3. **Analysis and Visualizations**: Word frequencies, bigrams, trigrams, and LDA results.
-4. **Search Results**: Ranked products for user-defined queries.
+To load a pre-scraped dataset and preprocess the product descriptions, use the `--path` option:
+
+```bash
+python main_amazon.py --path data/raw/laptop_results_2024-11-15.tsv --keyword "laptop, pc"
+```
+
+**Console Output**:
+
+```
+Loading Amazon data from data/raw/laptop_results_2024-11-15.tsv...
+Data loaded successfully.
+Preprocessing data with standard processing...
+```
+
+This command loads and preprocesses data from the specified `.tsv` file without additional scraping.
+
+
+---
+
+#### 3. Word Frequency Analysis
+
+To analyze word, bigram, and trigram frequencies and generate visualizations for the most common terms, run:
+
+```bash
+python main_amazon.py --path data/raw/laptop_results_2024-11-15.tsv --plot_frequency --top_words 10 --top_bigrams 10 --top_trigrams 10
+```
+
+**Console Output**:
+
+```
+Loading Amazon data from data/raw/laptop_results_2024-11-15.tsv...
+Data loaded successfully.
+Preprocessing data with standard processing...
+Running word frequency analysis and plotting...
+Top words by frequency: [('notebook', 59), ('display', 39), ('intel', 38), ...]
+Top bigrams by frequency: [(('display', 'fhd'), 10), (('display', 'full_hd'), 10), ...]
+Top trigrams by frequency: [(('libre_off', 'pronto', 'alluso'), 5), ('notebook', 'alluminio', 'monitor'), ...]
+```
+
+**Visualizations**:
+
+- **Top 10 Most Common Words**:
+  ![Top 10 Most Common Words](./files/1.%20amazon%20prodcut%20search/Top%2010%20Most%20Common%20Words.png)
+
+- **Top 10 Most Common Bigrams**:
+  ![Top 10 Most Common Bigrams](./files/1.%20amazon%20prodcut%20search/Top%2010%20Most%20Common%20Bigrams.png)
+
+- **Top 10 Most Common Trigrams**:
+  ![Top 10 Most Common Trigrams](./files/1.%20amazon%20prodcut%20search/Top%2010%20Most%20Common%20Trigrams.png)
+
+These images illustrate the most frequent words, bigrams, and trigrams found in the product descriptions.
+
+---
+
+#### 4. Topic Modeling (LDA)
+
+To perform Latent Dirichlet Allocation (LDA) for topic modeling and identify common themes within the product
+descriptions, run:
+
+```bash
+python main_amazon.py --path data/raw/laptop_results_2024-11-15.tsv --run_lda --num_topics 5 --passes 15
+```
+
+**Console Output**:
+
+```
+Loading Amazon data from data/raw/laptop_results_2024-11-15.tsv...
+Data loaded successfully.
+Preprocessing data with standard processing...
+Running LDA topic modeling...
+Topic 1: 0.037*"display" + 0.036*"garanzia" + ...
+Topic 2: 0.035*"intel" + 0.027*"wifi" + ...
+...
+```
+
+**Visualization**:
+
+- **LDA Topic Modeling**:
+  ![LDA Topic Modeling](./files/1.%20amazon%20prodcut%20search/LDA%20topic%20modeling.png)
+
+This image visualizes the extracted topics and their top words.
+
+---
+
+#### 5. Search Functionality
+
+To search for products related to a specific query and retrieve the top 5 results based on cosine similarity:
+
+```bash
+python main_amazon.py --path data/raw/laptop_results_2024-11-15.tsv --run_search --query "Intel Core i7 SSD HD Ram 16Gb" --top_k 5
+```
+
+**Console Output**:
+
+```
+Loading Amazon data from data/raw/laptop_results_2024-11-15.tsv...
+Data loaded successfully.
+Preprocessing data with standard processing...
+Using non-Spark (original) search engine...
+Indexing complete.
+Top search results:
+Document ID: 5, Score: 0.2735, Description: pc fisso computer desktop intel_core_i7 intel hd masterizz wifi interno ...
+Document ID: 173, Score: 0.1756, Description: jumper computer portatile hd display office_365 ...
+...
+```
+
+The command displays the top 5 search results with their relevance scores and descriptions.
+
+---
+
+#### Notes
+
+- If the `--path` argument is omitted, the program defaults to loading data
+  from `data/raw/computer_results_default.tsv`.
+- Use the `--top_k` flag to specify the number of search results returned.
+
+---
+
+By following these commands, you can run the complete Amazon Product Search analysis, from data scraping and loading to
+word analysis, topic modeling, and search functionality.
+
+---
