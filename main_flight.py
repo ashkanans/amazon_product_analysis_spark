@@ -35,7 +35,7 @@ def main(actions, data_path):
         elif action == "load":
             df = loader.load_data(spark)
 
-        if action == "check_missing":
+        elif action == "check_missing":
             if df:
                 analyzer = FlightDataAnalyzer(df)
                 analyzer.check_missing_values()
@@ -54,6 +54,7 @@ def main(actions, data_path):
                 # LogisticRegressionModel.save_model(best_lr_model, path="models/logistic_regression") # saving does not work on windows
                 predictions = LogisticRegressionModel.predict(best_lr_model, test)
                 ModelEvaluator.evaluate(predictions)
+                Visualizer.plot_roc_curve(best_lr_model, test)
             else:
                 print("Data not loaded. Please load data before checking for missing values.")
 
@@ -69,25 +70,6 @@ def main(actions, data_path):
                 # RandomForestModel.save_model(best_rf_model, path="models/random_forest") # saving does not work on windows
                 predictions = RandomForestModel.predict(best_rf_model, test)
                 ModelEvaluator.evaluate(predictions)
-            else:
-                print("Data not loaded. Please load data before checking for missing values.")
-
-        elif action == "plot_roc_curve_logistic_regression":
-            if df:
-                analyzer = FlightDataAnalyzer(df)
-                train, test = analyzer.split_data()
-                lr, paramGrid = LogisticRegressionModel.tune(train)
-                best_lr_model = LogisticRegressionModel.cross_validate(train, lr, paramGrid)
-                Visualizer.plot_roc_curve(best_lr_model, test)
-            else:
-                print("Data not loaded. Please load data before checking for missing values.")
-
-        elif action == "plot_feature_importances_random_forest":
-            if df:
-                analyzer = FlightDataAnalyzer(df)
-                train, test = analyzer.split_data()
-                rf, paramGrid = RandomForestModel.tune(train)
-                best_rf_model = RandomForestModel.cross_validate(train, rf, paramGrid)
                 Visualizer.plot_feature_importances(best_rf_model)
             else:
                 print("Data not loaded. Please load data before checking for missing values.")
