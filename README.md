@@ -55,13 +55,16 @@
     - [Training and Evaluating Models](#5-training-and-evaluating-models)
         - [Training Process](#training-process)
         - [Evaluation Process](#evaluation-process)
+      - [Neural Network Training](#neural-network-training)
     - [Model Details](#model-specific-details)
         - [Logistic Regression](#logistic-regression)
         - [Random Forest](#random-forest)
+      - [Neural Network](#neural-network)
     - [Model Results and Comparison](#7-results)
         - [Logistic Regression Evaluation](#1-logistic-regression-model-evaluation)
         - [Random Forest Evaluation](#2-random-forest-model-evaluation)
-        - [Model Comparison Insights](#3-insights-from-model-comparisons)
+      - [Neural Network Evaluation](#3-neural-network-model-evaluation)
+      - [Model Comparison Insights](#4-insights-from-model-comparisons)
 
 ---
 
@@ -83,18 +86,15 @@ product_search_and_flight_delay_ml/
 │   └── raw/
 │       ├── computer_results_default.tsv
 │       ├── dictionary.html
-│       ├── flights_sample_3m.csv
+│       └── flights_sample_3m.csv
 ├── files/
 │   ├── description/
 │   │   └── homework2.pdf
-│   ├── eda/
-│   │   ├── Average Departure and Arrival Delays by Airline.png
-│   │   ├── Distribution of Arrival Delays.png
-│   │   ├── Correlation Heatmap for Numerical Features.png
-│   │   └── ...
-│   ├── report/
-│       ├── dm-hw2.pdf
-│       └── dm-hw2.tex
+│   └── eda/
+│       ├── Average Departure and Arrival Delays by Airline.png
+│       ├── Distribution of Arrival Delays.png
+│       ├── Correlation Heatmap for Numerical Features.png
+│       └── ...
 ├── Problem1/
 │   ├── analysis/
 │   │   ├── LDAAnalyzer.py
@@ -103,7 +103,7 @@ product_search_and_flight_delay_ml/
 │   │   └── AmazonScraper.py
 │   ├── search/
 │   │   └── SearchEngine.py
-│   ├── text_processing/
+│   └── text_processing/
 │       └── TextPreprocessor.py
 ├── Problem2/
 │   ├── SparkLDAAnalyzer.py
@@ -117,14 +117,16 @@ product_search_and_flight_delay_ml/
 │   ├── evaluation/
 │   │   ├── ModelEvaluator.py
 │   │   └── Visualizer.py
-│   ├── ml_models/
+│   └── ml_models/
 │       ├── LogisticRegressionModel.py
-│       └── RandomForestModel.py
+│       ├── RandomForestModel.py
+│       ├── NeuralNetworkModel.py
+│       └── GradientBoostedTreesModel.py
 ├── LICENSE
 ├── README.md
 ├── main_amazon.py
 ├── main_flight.py
-├── requirements.txt
+└── requirements.txt
 ```
 
 ---
@@ -867,7 +869,7 @@ a binary decision-making problem.
 
 ### **5. Training and Evaluating Models**
 
-To train and evaluate the Logistic Regression and Random Forest models:
+To train and evaluate the models run the following commands:
 
 **Logistic Regression:**
 
@@ -881,6 +883,18 @@ python main_flight.py load train_evaluate_logistic_regression
 python main_flight.py load train_evaluate_random_forest
 ```
 
+**Neural Network:**
+
+```bash
+python main_flight.py load train_evaluate_neural_network
+```
+
+**Gradient Boosted Trees:**
+
+```bash
+python main_flight.py load train_evaluate_gradient_boosted_trees
+```
+
 ---
 
 #### Training and Evaluating Models
@@ -891,22 +905,12 @@ But how the Logistic Regression and Random Forest models are trained, tuned, and
 
 When any of the `train_evaluate` commands is executed, this is what is happening:
 
-1. **Data Preparation:**
-    - The dataset is preprocessed by handling missing values, performing feature engineering, and preparing a binary
-      label column indicating whether a flight is delayed by more than 15 minutes.
-
-2. **Train-Test Split:**
-    - The data is split into training and testing sets (80-20) to train the models and evaluate their performance on
-      unseen data.
-
-3. **Model Tuning:**
-    - Both models are tuned using a hyperparameter grid search:
-        - Logistic Regression:
-            - Regularization parameter (`regParam`).
-            - Elastic Net mixing ratio (`elasticNetParam`).
-        - Random Forest:
-            - Number of trees (`numTrees`).
-            - Maximum depth of trees (`maxDepth`).
+    - Logistic Regression:
+    - Regularization parameter (`regParam`).
+    - Elastic Net mixing ratio (`elasticNetParam`).
+    - Random Forest:
+    - Number of trees (`numTrees`).
+    - Maximum depth of trees (`maxDepth`).
 
 4. **Cross-Validation:**
     - Five-fold cross-validation is applied during model training to find the best hyperparameter settings based on the
@@ -988,21 +992,37 @@ What are they used and how they should be evaluated?
 
 - **Logistic Regression:**
     - Suitable for linear relationships between features and the label.
-    - AUC and other metrics are used to evaluate its ability to classify delayed and non-delayed flights.
+    - Highly interpretable and computationally efficient, making it ideal for simpler datasets or use cases where
+      explainability is crucial.
+    - Evaluated using AUC, accuracy, precision, recall, and F1-score, reflecting its ability to classify delayed and
+      non-delayed flights accurately.
 
 - **Random Forest:**
-    - Effective for capturing non-linear relationships.
-    - Provides insights into feature importance, highlighting key factors influencing flight delays.
+    - Effective for capturing non-linear relationships and interactions between features.
+    - Offers interpretability through feature importance scores, helping to identify key factors influencing flight
+      delays.
+    - Robust to overfitting and useful for complex datasets.
+    - Evaluated using the same metrics as Logistic Regression, with additional insights from feature importance
+      analysis.
 
 - **Neural Network:**
-    - The neural network handles non-linear relationships between features more effectively than Logistic Regression or
-      Random Forest.
-    - Its flexibility in architecture allows for future extensions, such as incorporating additional features or
-      fine-tuning hyperparameters.
+    - Handles non-linear relationships more effectively than Logistic Regression or Random Forest.
+    - Flexible architecture allows for complex patterns to be captured and enables future extensions, such as
+      incorporating new features or tuning hyperparameters.
+    - Requires more computational resources and is less interpretable than Logistic Regression or Random Forest.
+    - Evaluated using AUC, accuracy, precision, recall, and F1-score, with emphasis on balancing precision and recall
+      due to its higher flexibility.
+
+- **Gradient Boosted Trees:**
+    - Combines the strengths of multiple decision trees through an iterative boosting process, resulting in high
+      accuracy and resilience to overfitting.
+    - Excels at capturing complex patterns in data while maintaining interpretability through feature importance
+      analysis.
+    - Evaluated using the same metrics, with particular strength in achieving high AUC and F1-scores.
 
 ---
 
-### **7. Results**
+### **8. Results**
 
 Finally, it is time to evaluate and compare our Logistic Regression and Random Forest models
 
@@ -1105,6 +1125,41 @@ The neural network was evaluated on the test dataset, and the following metrics 
 
 ---
 
+#### 4. **Gradient Boosted Tree Model Evaluation**
+
+- **Performance Metrics:**
+  ```
+  AUC: 0.9305
+  Accuracy: 95.67%
+  Precision: 95.74%
+  Recall: 95.67%
+  F1-Score: 95.46%
+  ```
+    - The **AUC (0.9305)** is the highest among all models, showing exceptional distinction between delayed and
+      non-delayed flights.
+    - **Accuracy (95.67%)** surpasses all other models.
+    - **Precision (95.74%)** indicates a strong ability to avoid false positives.
+    - **Recall (95.67%)** demonstrates the best ability to capture delayed flights.
+    - **F1-Score (95.46%)** shows the best balance between precision and recall.
+
+- **Confusion Matrix:**
+  ```
+  +-----+----------+------+
+  |label|prediction| count|
+  +-----+----------+------+
+  |    0|       0.0|247966|
+  |    0|       1.0|  1093|
+  |    1|       0.0| 11922|
+  |    1|       1.0| 39468|
+  +-----+----------+------+
+  ```
+    - True Negatives (247,966): Non-delayed flights correctly identified.
+    - False Positives (1,093): Flights incorrectly predicted as delayed.
+    - True Positives (39,468): Delayed flights correctly identified.
+    - False Negatives (11,922): Delayed flights incorrectly predicted as non-delayed.
+
+---
+
 #### **Interpretation of Results**
 
 - **AUC (0.926):** Indicates excellent ability to distinguish between delayed and non-delayed flights. The model
@@ -1118,19 +1173,17 @@ The neural network was evaluated on the test dataset, and the following metrics 
 
 ---
 
-### 4. **Insights from Model Comparisons**
+### **Insights from Model Comparisons**
 
-- **Logistic Regression** outperforms **Random Forest** slightly in terms of accuracy, precision, recall, and F1-score,
-  with a notable advantage in minimizing false negatives, making it suitable for scenarios where identifying all delayed
-  flights is crucial.
-- **Random Forest** offers comparable performance and provides feature importance insights, making it valuable for
-  understanding the underlying factors contributing to delays.
-- The **Neural Network Model** achieves the highest accuracy (95.51%) and precision (95.24%), confirming its ability to
-  minimize false positives while maintaining strong overall performance.
-- The **AUC values** of all models are high (Logistic Regression: 0.923, Random Forest: 0.923, Neural Network: 0.926),
-  showcasing their robustness in distinguishing between delayed and non-delayed flights.
-- Despite its superior accuracy, the Neural Network has slightly lower recall (77.46%), indicating that it misses more
-  delayed flights compared to Logistic Regression. However, its F1-score (85.43%) balances precision and recall
-  effectively.
-
----
+1. **Performance Leader:**
+    - The Gradient Boosted Tree model outperforms all other models across all metrics, achieving the highest AUC,
+      accuracy, precision, recall, and F1-score.
+2. **Balanced Performance:**
+    - Logistic Regression demonstrates a strong balance between metrics, with a lower false negative rate than the
+      Neural Network.
+3. **Interpretability:**
+    - Random Forest provides feature importance insights, which are valuable for understanding delay factors, even
+      though its performance is slightly below Gradient Boosted Tree and Logistic Regression.
+4. **Non-linear Flexibility:**
+    - The Neural Network and Gradient Boosted Tree excel in capturing non-linear relationships in the data, making them
+      suitable for complex datasets.

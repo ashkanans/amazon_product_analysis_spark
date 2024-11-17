@@ -81,7 +81,7 @@ def main(actions, data_path):
                 # RandomForestModel.save_model(best_rf_model, path="models/random_forest") # saving does not work on windows
                 predictions = RandomForestModel.predict(best_rf_model, test)
                 ModelEvaluator.evaluate(predictions)
-                Visualizer.plot_feature_importances(best_rf_model, analyzer.feature_cols)
+                # Visualizer.plot_feature_importances(best_rf_model, analyzer.feature_cols)
             else:
                 print("Data not loaded. Please load data before checking for missing values.")
 
