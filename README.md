@@ -120,11 +120,6 @@ product_search_and_flight_delay_ml/
 │   ├── ml_models/
 │       ├── LogisticRegressionModel.py
 │       └── RandomForestModel.py
-├── tests/
-│   ├── test_amazon_scraper.py
-│   ├── test_lda_analyzer.py
-│   ├── test_flight_data_loader.py
-│   └── ...
 ├── LICENSE
 ├── README.md
 ├── main_amazon.py
@@ -249,9 +244,8 @@ Key Features:
 
 ---
 
-Here's an improved **Commands and Examples** section that presents each command clearly with sample console output and
-relevant images. This structure consolidates information and provides a clear, sequential guide for running each
-command.
+The following section presents each command clearly with sample console output and
+relevant images.
 
 ---
 
