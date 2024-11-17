@@ -1,6 +1,7 @@
 import argparse
 import os
 
+import numpy as np
 import torch
 from pyspark.sql import SparkSession
 
@@ -21,8 +22,8 @@ def main(actions, data_path):
     spark = (SparkSession.builder.
              appName("FlightDelayPrediction")
              .config("spark.local.dir", relative_temp_dir)
-             .config("spark.executor.memory", "12g")
-             .config("spark.driver.memory", "8g")
+             .config("spark.executor.memory", "16g")
+             .config("spark.driver.memory", "10g")
              .config("spark.memory.fraction", "0.8")
              .getOrCreate())
 
@@ -99,20 +100,34 @@ def main(actions, data_path):
                 print("Data not loaded. Please load data before checking for missing values.")
 
         elif action == "train_evaluate_neural_network":
+
             if df:
+
                 analyzer = FlightDataAnalyzer(df)
                 analyzer.handle_missing_values()
                 analyzer.feature_engineering()
                 analyzer.prepare_binary_label()
-                train, test = analyzer.split_data()
+                train, test = analyzer.split_data(0.05, 0.2)
 
-                train_features, train_labels = train.select("features", "label").toPandas().values.T
-                test_features, test_labels = test.select("features", "label").toPandas().values.T
+                # Convert Spark DataFrame to NumPy arrays
+                train_features = np.array(train.select("features").rdd.map(lambda x: x[0].toArray()).collect())
+                train_labels = np.array(train.select("label").rdd.map(lambda x: x[0]).collect(), dtype=np.float32)
+                test_features = np.array(test.select("features").rdd.map(lambda x: x[0].toArray()).collect())
+                test_labels = np.array(test.select("label").rdd.map(lambda x: x[0]).collect(), dtype=np.float32)
 
-                nn_model = NeuralNetworkModel.train_model(torch.tensor(train_features), torch.tensor(train_labels),
-                                                          input_dim=len(train_features[0]))
-                NeuralNetworkModel.evaluate_model(nn_model, torch.tensor(test_features), torch.tensor(test_labels))
+                # Convert to PyTorch tensors
+                train_features_tensor = torch.tensor(train_features, dtype=torch.float32)
+                train_labels_tensor = torch.tensor(train_labels, dtype=torch.float32)
+                test_features_tensor = torch.tensor(test_features, dtype=torch.float32)
+                test_labels_tensor = torch.tensor(test_labels, dtype=torch.float32)
+
+                # Train and evaluate Neural Network
+                nn_model = NeuralNetworkModel.train_model(train_features_tensor, train_labels_tensor,
+                                                          input_dim=train_features_tensor.shape[1])
+                NeuralNetworkModel.evaluate_model(nn_model, test_features_tensor, test_labels_tensor)
+
             else:
+
                 print("Data not loaded. Please load data before checking for missing values.")
 
         else:

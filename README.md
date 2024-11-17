@@ -411,7 +411,11 @@ The command displays the top 5 search results with their relevance scores and de
 
 ### Spark Implementation of Amazon Product Search
 
+This project has been implemented on WindowsOS and the spark configuration on Windows has been done based
+on [How to Install Apache Spark on Windows](https://www.google.com/url?sa=t&source=web&rct=j&opi=89978449&url=https://phoenixnap.com/kb/install-spark-on-windows-10&ved=2ahUKEwj_hr-un-OJAxUVgv0HHbFaG5sQFnoECBkQAQ&usg=AOvVaw2xn1OY8gD3VZSzm4UY4YVJ)
+
 Assume we have scraped the products using the commands described in [Scraping Data](#1-scraping-data) section.  
+
 So, we have a `.tsv` file in the `data/raw` directory. We call it our "default" scraped data.
 
 To incorporate Spark into the previous task, we can do 2 main things:
@@ -936,6 +940,47 @@ Then with the best model, we do the evaluation as following
 
 ---
 
+### 7. Neural Network Model
+
+A neural network model was introduced for flight delay prediction, providing a more flexible and powerful approach to
+capture complex, non-linear relationships between features and labels.
+
+This model training and evaluation can be executed with the following command:
+
+```bash
+python main_flight.py load train_evaluate_neural_network
+```
+
+#### **Model Architecture**
+
+- **Input Layer:** Takes in the feature vector (`input_dim`).
+- **Hidden Layers:**
+    - First layer: 128 neurons with ReLU activation.
+    - Second layer: 64 neurons with ReLU activation.
+- **Output Layer:** A single neuron with a Sigmoid activation function to produce probabilities for binary
+  classification.
+- **Loss Function:** Binary Cross-Entropy Loss (BCELoss), which is suitable for binary classification tasks.
+- **Optimizer:** Adam optimizer with a learning rate of `0.001`.
+
+#### **Training Details**
+
+- The model was trained for **10 epochs** with a batch size of 32.
+- **Loss values per epoch:**
+  ```
+  Epoch 1/10, Loss: 0.21436312794685364
+  Epoch 2/10, Loss: 0.12203751504421234
+  Epoch 3/10, Loss: 0.1563258320093155
+  Epoch 4/10, Loss: 0.203612819314003
+  Epoch 5/10, Loss: 0.14350281655788422
+  Epoch 6/10, Loss: 0.14558719098567963
+  Epoch 7/10, Loss: 0.13873544335365295
+  Epoch 8/10, Loss: 0.1565149873495102
+  Epoch 9/10, Loss: 0.29420629143714905
+  Epoch 10/10, Loss: 0.16712436079978943
+  ```
+
+---
+
 A little literature about the models we used in this project.
 What are they used and how they should be evaluated?
 
@@ -948,6 +993,12 @@ What are they used and how they should be evaluated?
 - **Random Forest:**
     - Effective for capturing non-linear relationships.
     - Provides insights into feature importance, highlighting key factors influencing flight delays.
+
+- **Neural Network:**
+    - The neural network handles non-linear relationships between features more effectively than Logistic Regression or
+      Random Forest.
+    - Its flexibility in architecture allows for future extensions, such as incorporating additional features or
+      fine-tuning hyperparameters.
 
 ---
 
@@ -1042,7 +1093,32 @@ Finally, it is time to evaluate and compare our Logistic Regression and Random F
 
 ---
 
-#### 3. **Insights from Model Comparisons**
+#### 3. **NN Model Evaluation Metrics**
+
+The neural network was evaluated on the test dataset, and the following metrics were observed:
+
+- **AUC:** 0.926
+- **Accuracy:** 95.51%
+- **Precision:** 95.24%
+- **Recall:** 77.46%
+- **F1-Score:** 85.43%
+
+---
+
+#### **Interpretation of Results**
+
+- **AUC (0.926):** Indicates excellent ability to distinguish between delayed and non-delayed flights. The model
+  effectively ranks predictions across thresholds.
+- **Accuracy (95.51%):** The model accurately predicts delay status in most cases, reflecting its robustness.
+- **Precision (95.24%):** High precision shows that the model minimizes false positives, meaning it seldom misclassifies
+  non-delayed flights as delayed.
+- **Recall (77.46%):** While slightly lower than precision, recall indicates the model captures most delayed flights but
+  misses some.
+- **F1-Score (85.43%):** Balances precision and recall, showing the model is reliable overall.
+
+---
+
+#### 4. **Insights from Model Comparisons**
 
 - Logistic Regression outperforms Random Forest slightly in terms of accuracy, precision, recall, and F1-score.
 - Both models exhibit high AUC values, confirming their effectiveness in separating delayed from non-delayed flights.
