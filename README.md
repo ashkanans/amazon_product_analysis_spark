@@ -1,7 +1,7 @@
 
 # Product Search and Flight Delay Prediction
 
-### Table of Contents for the Markdown File
+### Table of Contents
 
 1. **Product Search and Flight Delay Prediction**
     - [Project Description](#project-description)
