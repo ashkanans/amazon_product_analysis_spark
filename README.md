@@ -3,7 +3,7 @@
 
 ### Table of Contents
 
-1. **Product Search and Flight Delay Prediction**
+1. **Overview**
     - [Project Description](#project-description)
     - [Project Structure](#project-structure)
 
@@ -26,9 +26,9 @@
         - [Notes](#notes)
 
 3. **Spark Implementation of Amazon Product Search**
-    - [Implementation Steps](#implementation-steps)
+    - [Implementation Steps](#spark-implementation-of-amazon-product-search)
         - [Preprocessing with Spark](#1-use-spark-to-preprocess-the-data)
-        - [Search Engine with Spark](#2-use-spark-to-build-the-search-engine)
+        - [Search Engine with Spark](#2-use-spark-to-build-the-search-engine-)
     - [Commands and Examples](#commands-and-examples-1)
         - [Spark Preprocessing and Search](#1-using-spark-to-preprocess-and-search-the-data)
         - [Word, Bigram, and Trigram Frequencies](#2-analyzing-word-bigram-and-trigram-frequencies)
@@ -36,7 +36,7 @@
 
 4. **Flight Delay Prediction**
     - [Project Overview](#flight-delay-prediction)
-        - [Task Objective](#what-is-the-task)
+        - [Objective](#what-is-the-task)
     - [Commands and Examples](#commands-and-examples-2)
         - [Downloading and Loading Data](#1-downloading-and-loading-data)
         - [Notes on Kaggle API Setup](#notes-on-kaggle-api-setup)
@@ -46,25 +46,19 @@
         - [Time-Based Patterns](#3-time-based-patterns)
         - [Correlation Heatmap](#4-correlation-heatmap)
         - [Cancellation Reasons](#5-cancellation-reasons)
-    - [Handling Missing Values](#3-checking-and-handling-missing-values)
-        - [Identifying Missing Values](#identifying-missing-values)
-        - [Handling Strategies](#handling-missing-values)
     - [Feature Engineering and Label Preparation](#4-feature-engineering-and-label-preparation)
         - [Feature Selection](#feature-engineering)
-        - [Binary Label Preparation](#binary-label-preparation)
-    - [Training and Evaluating Models](#5-training-and-evaluating-models)
+        - [Label Creation](#binary-label-preparation)
+    - [Model Training and Evaluation](#5-training-and-evaluating-models)
         - [Training Process](#training-process)
         - [Evaluation Process](#evaluation-process)
-      - [Neural Network Training](#neural-network-training)
-    - [Model Details](#model-specific-details)
-        - [Logistic Regression](#logistic-regression)
-        - [Random Forest](#random-forest)
-      - [Neural Network](#neural-network)
-    - [Model Results and Comparison](#7-results)
+    - [Models Used](#7-model-specific-details)
+    - [Model Comparison](#8-model-comparison)
         - [Logistic Regression Evaluation](#1-logistic-regression-model-evaluation)
         - [Random Forest Evaluation](#2-random-forest-model-evaluation)
-      - [Neural Network Evaluation](#3-neural-network-model-evaluation)
-      - [Model Comparison Insights](#4-insights-from-model-comparisons)
+        - [Neural Network Evaluation](#3-neural-network-model-evaluation)
+        - [Gradient Boosted Trees Evaluation](#4-gradient-boosted-tree-model-evaluation)
+        - [Insights from Model Comparisons](#insights-from-model-comparisons)
 
 ---
 
@@ -234,7 +228,7 @@ Key Features:
 
 #### Running the Program
 
-**Setup**:
+#### Setup**:
 
 1. Install the dependencies required for the project using the `requirements.txt` file:
    ```bash
@@ -422,7 +416,7 @@ So, we have a `.tsv` file in the `data/raw` directory. We call it our "default" 
 
 To incorporate Spark into the previous task, we can do 2 main things:
 
-1. **Use Spark to Preprocess the Data**  
+#### 1 **Use Spark to Preprocess the Data**
    Spark's distributed capabilities allow us to preprocess product descriptions efficiently, even for large datasets.
    The preprocessing steps include tokenization, removal of stopwords, lemmatization, and more, as defined in
    the `preprocess_with_pyspark` function.
@@ -435,7 +429,8 @@ To incorporate Spark into the previous task, we can do 2 main things:
    **Code Reference:** `SparkPreprocessing.py` provides the implementation of these preprocessing functions using
    PySpark and NLTK.
 
-2. **Use Spark to Build the Search Engine**  
+#### 2 **Use Spark to Build the Search Engine**
+
    Using Spark for building a search engine involves indexing product descriptions and efficiently handling queries.
    This is done using:
     - TF-IDF for feature extraction.
@@ -449,8 +444,6 @@ To incorporate Spark into the previous task, we can do 2 main things:
 
    **Code Reference:** The class `SparkSearchEngine` in `SparkSearchEngine.py` provides an implementation of these
    features.
-
----
 
 ---
 
@@ -537,7 +530,7 @@ This section describes the steps and methodology for predicting flight delays us
 preprocessing, exploratory data analysis (EDA), feature engineering, and finally building machine learning models for
 binary classification.
 
-What is the task?
+#### What is the task?
 
 Given a dataset of flights, create model predicting whether a flight is delayed by more than 15 minutes.
 
@@ -548,7 +541,9 @@ delay.
 
 ---
 
-### 1. **Downloading and Loading Data**
+---
+
+### **1. Downloading and Loading Data**
 
 To work with the flight delay dataset, you first need to download and load it into your environment. Follow these steps:
 
@@ -616,7 +611,9 @@ OSError: Could not find kaggle.json. Make sure it's located in ~/.kaggle. Or use
 
 ---
 
-### 2. **Exploratory Data Analysis (EDA)**
+---
+
+### **2. Exploratory Data Analysis (EDA)**
 
 The first thing that we do when we deal with a ML problem is analyzing the data.
 In this section we perform a thorough investigation of the data and its structure.
@@ -757,7 +754,9 @@ only 50% of the dataset was used for this analysis.
 
 ---
 
-### 3. Checking and Handling Missing Values
+---
+
+### **3. Checking and Handling Missing Values**
 
 To ensure data integrity, the script performs the following actions for identifying and managing missing values:
 
@@ -805,6 +804,8 @@ This function applies the following strategies:
       delays (`DELAY_DUE_CARRIER`, `DELAY_DUE_WEATHER`, `DELAY_DUE_NAS`, `DELAY_DUE_SECURITY`, `DELAY_DUE_LATE_AIRCRAFT`)
       are imputed with `0.0`, assuming no delay occurred if the value is missing.
     - **Example:** If `DELAY_DUE_CARRIER` is missing, it will be set to `0.0`.
+
+---
 
 ---
 
@@ -867,6 +868,8 @@ a binary decision-making problem.
 
 ---
 
+---
+
 ### **5. Training and Evaluating Models**
 
 To train and evaluate the models run the following commands:
@@ -897,54 +900,75 @@ python main_flight.py load train_evaluate_gradient_boosted_trees
 
 ---
 
-#### Training and Evaluating Models
+### Training and Evaluating Models
 
-But how the Logistic Regression and Random Forest models are trained, tuned, and evaluated to predict flight delays?
-
-#### **Training Process**
-
-When any of the `train_evaluate` commands is executed, this is what is happening:
-
-    - Logistic Regression:
-    - Regularization parameter (`regParam`).
-    - Elastic Net mixing ratio (`elasticNetParam`).
-    - Random Forest:
-    - Number of trees (`numTrees`).
-    - Maximum depth of trees (`maxDepth`).
-
-4. **Cross-Validation:**
-    - Five-fold cross-validation is applied during model training to find the best hyperparameter settings based on the
-      Area Under the ROC Curve (AUC).
-
-5. **Final Training:**
-    - The best-performing model from cross-validation is used to make predictions on the test dataset.
-
-Then with the best model, we do the evaluation as following
+This section describes the training, tuning, and evaluation process for the Logistic Regression, Random Forest, Neural
+Network, and Gradient Boosted Tree models used in this project to predict flight delays.
 
 ---
 
-### **6. Evaluation Process**
+### **Training Process**
+
+When any of the `train_evaluate` commands is executed, the following steps occur:
+
+1. **Hyperparameter Tuning:**
+    - **Logistic Regression:**
+        - Regularization parameter (`regParam`) is tuned to balance overfitting and underfitting.
+        - Elastic Net mixing ratio (`elasticNetParam`) is tuned to combine L1 and L2 regularization for optimal
+          performance.
+    - **Random Forest:**
+        - Number of trees (`numTrees`) and maximum depth of trees (`maxDepth`) are tuned to improve performance while
+          avoiding overfitting.
+    - **Neural Network:**
+        - Learning rate (`lr`) and number of epochs are set to ensure convergence during training.
+        - Network architecture (number of layers and neurons) is predefined to balance complexity and computational
+          requirements.
+    - **Gradient Boosted Trees:**
+        - Number of boosting iterations, learning rate, and maximum depth of individual trees are tuned to optimize
+          accuracy and generalization.
+
+2. **Cross-Validation:**
+    - Five-fold cross-validation is applied during model training to select the best hyperparameter settings based on
+      the Area Under the ROC Curve (AUC).
+
+3. **Final Training:**
+    - The best-performing model configuration from cross-validation is trained on the entire training dataset.
+
+4. **Prediction on Test Data:**
+    - The trained model is used to make predictions on the test dataset for evaluation.
+
+---
+
+### **Evaluation Process**
 
 1. **Metrics Computed:**
-    - Key evaluation metrics include:
+    - The following key metrics are calculated to evaluate model performance:
         - **AUC (Area Under the Curve):** Measures the ability to distinguish between delayed and non-delayed flights.
-        - **Accuracy:** Percentage of correct predictions.
-        - **Precision:** Proportion of predicted delays that are actual delays.
-        - **Recall:** Proportion of actual delays that are correctly predicted.
-        - **F1-Score:** Harmonic mean of precision and recall.
-    - A confusion matrix is generated to summarize the performance.
+        - **Accuracy:** Represents the overall percentage of correct predictions.
+        - **Precision:** Indicates how many predicted delays are actually delayed flights.
+        - **Recall:** Measures the proportion of actual delayed flights correctly predicted.
+        - **F1-Score:** A harmonic mean of precision and recall, providing a balanced measure.
+    - A confusion matrix is generated to provide detailed insights into true positives, true negatives, false positives,
+      and false negatives.
 
-2. **ROC Curve:**
-    - The ROC curve is plotted to visualize the model’s true positive rate (TPR) versus the false positive rate (FPR)
-      across different thresholds.
+2. **Model-Specific Analysis:**
+    - **Logistic Regression:** Evaluated using its ability to provide linear insights and balance between precision and
+      recall.
+    - **Random Forest:** Feature importance is computed to identify key factors contributing to delays.
+    - **Neural Network:** Assessed based on its ability to capture complex non-linear patterns in data, as indicated by
+      high AUC and accuracy.
+    - **Gradient Boosted Trees:** Emphasized for its robustness and resilience to overfitting, achieving exceptional
+      metrics across the board.
 
-3. **Random Forest Feature Importance:**
-    - For the Random Forest model, feature importance is computed to identify which factors contribute most to
-      predicting flight delays.
+3. **ROC Curve:**
+    - The ROC curve is plotted for each model to visualize its trade-off between true positive rate (TPR) and false
+      positive rate (FPR) across various thresholds.
 
 ---
 
-### 7. Neural Network Model
+---
+
+### **6. Neural Network Model**
 
 A neural network model was introduced for flight delay prediction, providing a more flexible and powerful approach to
 capture complex, non-linear relationships between features and labels.
@@ -985,10 +1009,12 @@ python main_flight.py load train_evaluate_neural_network
 
 ---
 
+---
+
+#### **7. Model-Specific Details**
 A little literature about the models we used in this project.
 What are they used and how they should be evaluated?
 
-#### **Model-Specific Details**
 
 - **Logistic Regression:**
     - Suitable for linear relationships between features and the label.
@@ -1022,7 +1048,9 @@ What are they used and how they should be evaluated?
 
 ---
 
-### **8. Results**
+---
+
+### **8. Model Comparison**
 
 Finally, it is time to evaluate and compare our Logistic Regression and Random Forest models
 
@@ -1113,7 +1141,7 @@ Finally, it is time to evaluate and compare our Logistic Regression and Random F
 
 ---
 
-#### 3. **NN Model Evaluation Metrics**
+#### 3. **Neural Network Model Evaluation**
 
 The neural network was evaluated on the test dataset, and the following metrics were observed:
 
