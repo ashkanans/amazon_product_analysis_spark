@@ -11,3 +11,4 @@ bs4
 pyspark
 kaggle
 seaborn
+torch

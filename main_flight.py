@@ -1,13 +1,16 @@
 import argparse
 import os
 
+import torch
 from pyspark.sql import SparkSession
 
 from Problem3.analysis.FlightDataAnalyzer import FlightDataAnalyzer
 from Problem3.data_preparation.FlightDataLoader import FlightDataLoader
 from Problem3.evaluation.ModelEvaluator import ModelEvaluator
 from Problem3.evaluation.Visualizer import Visualizer
+from Problem3.ml_models.GradientBoostedTreesModel import GradientBoostedTreesModel
 from Problem3.ml_models.LogisticRegressionModel import LogisticRegressionModel
+from Problem3.ml_models.NeuralNetworkModel import NeuralNetworkModel
 from Problem3.ml_models.RandomForestModel import RandomForestModel
 
 
@@ -78,6 +81,37 @@ def main(actions, data_path):
                 predictions = RandomForestModel.predict(best_rf_model, test)
                 ModelEvaluator.evaluate(predictions)
                 Visualizer.plot_feature_importances(best_rf_model, analyzer.feature_cols)
+            else:
+                print("Data not loaded. Please load data before checking for missing values.")
+
+        elif action == "train_evaluate_gradient_boosted_trees":
+            if df:
+                analyzer = FlightDataAnalyzer(df)
+                analyzer.handle_missing_values()
+                analyzer.feature_engineering()
+                analyzer.prepare_binary_label()
+                train, test = analyzer.split_data()
+                gbt, paramGrid = GradientBoostedTreesModel.tune(train)
+                best_gbt_model = GradientBoostedTreesModel.cross_validate(train, gbt, paramGrid)
+                predictions = GradientBoostedTreesModel.predict(best_gbt_model, test)
+                ModelEvaluator.evaluate(predictions)
+            else:
+                print("Data not loaded. Please load data before checking for missing values.")
+
+        elif action == "train_evaluate_neural_network":
+            if df:
+                analyzer = FlightDataAnalyzer(df)
+                analyzer.handle_missing_values()
+                analyzer.feature_engineering()
+                analyzer.prepare_binary_label()
+                train, test = analyzer.split_data()
+
+                train_features, train_labels = train.select("features", "label").toPandas().values.T
+                test_features, test_labels = test.select("features", "label").toPandas().values.T
+
+                nn_model = NeuralNetworkModel.train_model(torch.tensor(train_features), torch.tensor(train_labels),
+                                                          input_dim=len(train_features[0]))
+                NeuralNetworkModel.evaluate_model(nn_model, torch.tensor(test_features), torch.tensor(test_labels))
             else:
                 print("Data not loaded. Please load data before checking for missing values.")
 
