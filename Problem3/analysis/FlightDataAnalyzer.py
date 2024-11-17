@@ -34,19 +34,21 @@ class FlightDataAnalyzer:
         self.df = self.df.withColumn("ARR_DELAY", F.coalesce(F.col("ARR_DELAY"), F.lit(0.0)))
         print("Imputed missing values in DEP_DELAY and ARR_DELAY with 0.0.")
 
-        # 2. Drop rows with missing values in other essential columns.
-        # These columns are critical for modeling delays, so rows with missing values in these columns should be dropped.
-        essential_cols = ["AIRLINE", "ORIGIN", "DEST", "CRS_DEP_TIME", "DISTANCE"]
-        self.df = self.df.dropna(subset=essential_cols)
-        print("Dropped rows with missing values in essential columns.")
-
-        # 3. Impute missing values in delay-related columns with 0.
+        # 2. Impute missing values in delay-related columns with 0.
         # These columns indicate specific types of delays. If missing, assume no delay of that type occurred.
         delay_cols = ["DELAY_DUE_CARRIER", "DELAY_DUE_WEATHER", "DELAY_DUE_NAS", "DELAY_DUE_SECURITY",
                       "DELAY_DUE_LATE_AIRCRAFT"]
         for col in delay_cols:
             self.df = self.df.withColumn(col, F.coalesce(F.col(col), F.lit(0.0)))
         print("Imputed missing values in delay-related columns with 0.")
+
+        # 3. Drop rows with missing values in other essential columns. These columns are critical for modeling
+        # delays, so rows with missing values in these columns should be dropped.
+        essential_cols = ["CRS_DEP_TIME", "DISTANCE", "AIRLINE", "ORIGIN", "DEST",
+                          "DELAY_DUE_CARRIER", "DELAY_DUE_WEATHER", "DELAY_DUE_NAS",
+                          "DELAY_DUE_SECURITY", "DELAY_DUE_LATE_AIRCRAFT"]
+        self.df = self.df.dropna(subset=essential_cols)
+        print("Dropped rows with missing values in essential columns.")
 
         return self.df
 

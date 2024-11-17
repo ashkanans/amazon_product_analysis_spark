@@ -469,3 +469,530 @@ Topic 5: 0.124*"scrivania" + 0.075*"con" + 0.050*"per" + 0.050*"di" + 0.050*"cm"
 
 ---
 
+## Flight Delay Prediction
+
+This section describes the steps and methodology for predicting flight delays using PySpark, starting from data
+preprocessing, exploratory data analysis (EDA), feature engineering, and finally building machine learning models for
+binary classification.
+
+What is the task?
+
+Given a dataset of flights, create model predicting whether a flight is delayed by more than 15 minutes.
+
+To be more precise, we will create a model, predicting if a flight is going to **depart** with more than 15 minutes of
+delay.
+
+### **Commands and Examples**
+
+---
+
+### 1. **Downloading and Loading Data**
+
+To work with the flight delay dataset, you first need to download and load it into your environment. Follow these steps:
+
+##### Download the Dataset
+
+To download the dataset, execute the following command:
+
+```bash
+python main_flight.py download
+```
+
+When you pass the `download` action to the `main_flight.py` script, the flight dataset is fetched using the Kaggle API
+and stored in the `data/raw` directory. After a successful download, the files are extracted, and you will find the
+following in the `data/raw` directory:
+
+- **`flights_sample_3m.csv`**: The actual dataset containing flight delay and cancellation information.
+- **`dictionary.html`**: A metadata file with general information about the dataset, including column descriptions and
+  data types.
+
+##### Console Output for Successful Download:
+
+After executing the command, you will see this output in the console:
+
+```
+Executing action: download
+Starting download from Kaggle...
+Dataset URL: https://www.kaggle.com/datasets/patrickzel/flight-delay-and-cancellation-dataset-2019-2023
+Dataset downloaded and extracted to data/
+```
+
+##### Loading the Dataset
+
+To load the dataset into your program, execute:
+
+```bash
+python main_flight.py load
+```
+
+By default, this command loads the file located at `data/raw/flights_sample_3m.csv`. Once downloaded, there is no need
+to download the dataset again unless the file is deleted or a new version is required.
+
+---
+
+##### Notes on Kaggle API Setup
+
+The Kaggle API is used to download the dataset. To enable its usage:
+
+1. Create an account on Kaggle and generate an API Token (`kaggle.json`).
+2. Place the `kaggle.json` file in the following location:
+    - **Linux/Mac**: `~/.kaggle/kaggle.json`
+    - **Windows**: `%HOMEPATH%\.kaggle\kaggle.json`
+
+If the `kaggle.json` file is not set up correctly, you will encounter the following error:
+
+```
+OSError: Could not find kaggle.json. Make sure it's located in ~/.kaggle. Or use the environment method. See setup instructions at https://github.com/Kaggle/kaggle-api/
+```
+
+---
+
+##### Important Notes
+
+- Once downloaded, you do not need to re-download the dataset unless explicitly required.
+- The `load` command always loads the `data/raw/flights_sample_3m.csv` file for subsequent analysis or processing.
+
+---
+
+### 2. **Exploratory Data Analysis (EDA)**
+
+The first thing that we do when we deal with a ML problem is analyzing the data.
+In this section we perform a thorough investigation of the data and its structure.
+
+#### 1. **Departure and Arrival Delay Distributions**
+
+- **Departure Delays:**
+    - ![Distribution of Departure Delays](files/3.%20flight%20prediction/eda/Distribution%20of%20Departure%20Delays.png)
+    - ![Distribution of Departure Delays (with mean)](files/3.%20flight%20prediction/eda/Distribution%20of%20Departure%20Delays%20(with%20mean).png)
+
+  Observations:
+    - Most flights have minimal or no departure delays, as evident from the sharp peak near zero.
+    - A small proportion of flights exhibit significant delays exceeding 500 minutes.
+    - The mean departure delay is marked in the plot, providing a central tendency for delays.
+
+- **Arrival Delays:**
+    - ![Distribution of Arrival Delays](files/3.%20flight%20prediction/eda/Distribution%20of%20Arrival%20Delays.png)
+    - ![Distribution of Arrival Delays (with mean)](files/3.%20flight%20prediction/eda/Distribution%20of%20Arrival%20Delays%20(with%20mean).png)
+
+  Observations:
+    - The arrival delay distribution mirrors the departure delay distribution, with most flights clustered around
+      minimal or no delay.
+    - A small number of flights experience extreme arrival delays.
+    - The mean arrival delay is also highlighted for better interpretability.
+
+---
+
+#### 2. **Delay and Cancellation Rates by Airline**
+
+- **Average Delays by Airline:**
+    - ![Average Departure and Arrival Delays by Airline](files/3.%20flight%20prediction/eda/Average%20Departure%20and%20Arrival%20Delays%20by%20Airline.png)
+
+  Observations:
+    - Airlines such as **Allegiant Air** and **Frontier Airlines** have the highest average delays, while others like *
+      *Endeavor Air** exhibit minimal delays.
+    - Departure delays tend to be slightly higher than arrival delays for most airlines.
+
+- **Cancellation Rates by Airline:**
+    - ![Cancellation Rate by Airline](files/3.%20flight%20prediction/eda/Cancellation%20Rate%20by%20Airline.png)
+
+  Observations:
+    - Airlines such as **Frontier Airlines** and **Southwest Airlines** have relatively high cancellation rates compared
+      to others.
+    - Airlines with low delays may still exhibit notable cancellation rates, highlighting different operational
+      challenges.
+
+---
+
+#### 3. **Time-Based Patterns**
+
+- **Delays by Hour of the Day:**
+    - ![Average Departure and Arrival Delays by Hour of Day](files/3.%20flight%20prediction/eda/Average%20Departure%20and%20Arrival%20Delays%20by%20Hour%20of%20Day.png)
+
+  Observations:
+    - Delays are more frequent during the early morning and late evening hours, likely due to congestion and operational
+      inefficiencies.
+    - Mid-day flights tend to have shorter delays, reflecting smoother operations during these hours.
+
+- **Delays by Day of the Week:**
+    - ![Average Departure and Arrival Delays by Day of the Week](files/3.%20flight%20prediction/eda/Average%20Departure%20and%20Arrival%20Delays%20by%20Day%20of%20the%20Week.png)
+
+  Observations:
+    - Delays are higher towards the end of the week, peaking on **Thursdays** and **Fridays**.
+    - This could be attributed to higher travel volumes and operational strain during these days.
+
+---
+
+#### 4. **Correlation Heatmap**
+
+- ![Correlation Heatmap for Numerical Features](files/3.%20flight%20prediction/eda/Correlation%20Heatmap%20for%20Numerical%20Features.png)
+
+  Observations:
+    - Departure and arrival delays are highly correlated, indicating that departure delays directly contribute to
+      arrival delays.
+    - Features like **distance** and **weather-related delays** show moderate correlations with the delay metrics,
+      providing insights into contributing factors.
+
+---
+
+#### 5. **Cancellation Reasons**
+
+- ![Distribution of Cancellation Reasons](files/3.%20flight%20prediction/eda/Distribution%20of%20Cancellation%20Reasons.png)
+
+  Observations:
+    - The most common cancellation reasons include **carrier-related issues** and **weather conditions**.
+    - Security-related cancellations are comparatively rare, reflecting their infrequent occurrence.
+
+---
+
+---
+
+### 6. **Train and Test Set Distribution**
+
+After splitting the dataset into train (80%) and test (20%) sets, it's important to verify the distribution of labels in
+both subsets to ensure consistency and fairness in model evaluation. Note that due to limited computational resources,
+only 50% of the dataset was used for this analysis.
+
+#### **Train Set Label Distribution**
+
+```
++-----+------+
+|label| count|
++-----+------+
+|    1|206406|
+|    0|996014|
++-----+------+
+```
+
+- The training set contains **206,406 flights labeled as delayed (label = 1)** and **996,014 flights labeled as
+  non-delayed (label = 0)**.
+- This results in a **17.2% delay rate**, with a roughly consistent proportion of delayed to non-delayed flights.
+
+#### **Test Set Label Distribution**
+
+```
++-----+------+
+|label| count|
++-----+------+
+|    1| 51390|
+|    0|249059|
++-----+------+
+```
+
+- The test set contains **51,390 delayed flights (label = 1)** and **249,059 non-delayed flights (label = 0)**.
+- The delay rate is similar to that of the training set, ensuring consistency in the distribution.
+
+---
+
+### Key Insights:
+
+1. **Consistent Proportions:** Both train and test sets have nearly identical proportions of delayed to non-delayed
+   flights, ensuring that the model is trained and evaluated under comparable conditions.
+2. **Impact of Imbalance:** Although the dataset is imbalanced, the consistent proportions across subsets reduce the
+   potential impact of this imbalance on model training and evaluation. Many machine learning algorithms, particularly
+   those using cross-validation and metrics like AUC, are resilient to such imbalances. Moreover, this is actually what
+   we see (or we hope) to happen in the real-world. most of the flights are departed on time and only a small portion of
+   them are delayed.
+
+---
+
+### 3. Checking and Handling Missing Values
+
+To ensure data integrity, the script performs the following actions for identifying and managing missing values:
+
+#### **Identifying Missing Values**
+
+You can identify missing data by using the `check_missing` command:
+
+```bash
+python main_flight.py load check_missing
+```
+
+This command computes and displays the number of `NaN` or `null` values for each column in the dataset. For instance,
+the output below indicates the presence of missing values in several columns such
+as `DEP_TIME`, `DEP_DELAY`, `ARR_TIME`, and specific delay-related columns like `DELAY_DUE_CARRIER`:
+
+```
+Executing action: check_missing
++-------+-------+-----------+------------+--------+---------+------+-----------+----+---------+------------+--------+---------+--------+----------+---------+-------+------------+--------+---------+---------+-----------------+--------+----------------+------------+--------+--------+-----------------+-----------------+-------------+------------------+-----------------------+
+|FL_DATE|AIRLINE|AIRLINE_DOT|AIRLINE_CODE|DOT_CODE|FL_NUMBER|ORIGIN|ORIGIN_CITY|DEST|DEST_CITY|CRS_DEP_TIME|DEP_TIME|DEP_DELAY|TAXI_OUT|WHEELS_OFF|WHEELS_ON|TAXI_IN|CRS_ARR_TIME|ARR_TIME|ARR_DELAY|CANCELLED|CANCELLATION_CODE|DIVERTED|CRS_ELAPSED_TIME|ELAPSED_TIME|AIR_TIME|DISTANCE|DELAY_DUE_CARRIER|DELAY_DUE_WEATHER|DELAY_DUE_NAS|DELAY_DUE_SECURITY|DELAY_DUE_LATE_AIRCRAFT|
++-------+-------+-----------+------------+--------+---------+------+-----------+----+---------+------------+--------+---------+--------+----------+---------+-------+------------+--------+---------+---------+-----------------+--------+----------------+------------+--------+--------+-----------------+-----------------+-------------+------------------+-----------------------+
+|      0|      0|          0|           0|       0|        0|     0|          0|   0|        0|           0|   77615|    77644|   78806|     78806|    79944|  79944|           0|   79942|    86198|        0|          2920860|       0|              14|       86198|   86198|       0|          2466137|          2466137|      2466137|           2466137|                2466137|
++-------+-------+-----------+------------+--------+---------+------+-----------+----+---------+------------+--------+---------+--------+----------+---------+-------+------------+--------+---------+---------+-----------------+--------+----------------+------------+--------+--------+-----------------+-----------------+-------------+------------------+-----------------------+
+```
+
+---
+
+#### **Handling Missing Values**
+
+After identifying missing data, the `handle_missing_values` function is executed to clean and preprocess the dataset.
+This function applies the following strategies:
+
+1. **Imputation for Delays:**
+    - Missing values in `DEP_DELAY` and `ARR_DELAY` are imputed with `0.0`, assuming that missing delay information
+      indicates no delay.
+    - **Example:** If a row lacks departure delay data, it will be filled with `0.0`.
+
+2. **Dropping Rows with Critical Missing Information:**
+    - Rows with missing values in essential columns such as `AIRLINE`, `ORIGIN`, `DEST`, `CRS_DEP_TIME`, `DISTANCE`
+      ,etc. are dropped.
+    - These columns are fundamental for modeling delays; missing values here could compromise the quality of
+      predictions.
+
+3. **Imputation for Delay-Related Columns:**
+    - Columns representing specific types of
+      delays (`DELAY_DUE_CARRIER`, `DELAY_DUE_WEATHER`, `DELAY_DUE_NAS`, `DELAY_DUE_SECURITY`, `DELAY_DUE_LATE_AIRCRAFT`)
+      are imputed with `0.0`, assuming no delay occurred if the value is missing.
+    - **Example:** If `DELAY_DUE_CARRIER` is missing, it will be set to `0.0`.
+
+---
+
+### **4. Feature Engineering and Label Preparation**
+
+After addressing missing values, the next steps involve preparing the dataset for machine learning by performing *
+*feature engineering** and **binary label creation**:
+
+#### **Feature Engineering**
+
+1. **Feature Selection:**
+    - Relevant features for delay prediction are selected, including:
+        - **Time-related features:** `CRS_DEP_TIME` (scheduled departure time) and `DISTANCE` (flight distance).
+        - **Delay-related causes:** `DELAY_DUE_CARRIER`, `DELAY_DUE_WEATHER`, `DELAY_DUE_NAS`, `DELAY_DUE_SECURITY`,
+          and `DELAY_DUE_LATE_AIRCRAFT`.
+        - **Categorical features:** `AIRLINE`, `ORIGIN`, and `DEST`.
+
+2. **Categorical Feature Encoding:**
+    - Categorical columns (`AIRLINE`, `ORIGIN`, `DEST`) are processed using:
+        - **StringIndexer:** Converts categorical string values to numerical indices.
+        - **OneHotEncoder:** Converts the indexed values into binary vectors for use in machine learning.
+
+3. **Feature Assembly:**
+    - The selected numerical features and the encoded categorical vectors are combined into a single feature vector
+      using `VectorAssembler`.
+    - This unified representation (`features`) is essential for model training.
+
+**But why these features (columns) are selected and others are rejected?**
+
+The reason is that these features provide a balance of **temporal, spatial, and causal information**, which are crucial
+for predicting delays.
+
+- **Time and distance** account for operational and logistical factors affecting delays.
+- **Categorical features** capture unique characteristics tied to airlines and airports.
+- The **delay-related columns** directly explain known factors contributing to delays, making them predictive.
+
+To know why each of these features are selected from my POV:
+
+- **Time-related Features:**
+    - `CRS_DEP_TIME` (scheduled departure time): Helps capture patterns in delays based on time of day.
+    - `DISTANCE` (flight distance): Longer flights may face different delay dynamics compared to shorter flights.
+
+- **Delay-related Causes:**
+    - `DELAY_DUE_CARRIER`, `DELAY_DUE_WEATHER`, `DELAY_DUE_NAS`, `DELAY_DUE_SECURITY`, and `DELAY_DUE_LATE_AIRCRAFT`:
+      These columns provide detailed reasons for delays, directly informing the prediction model.
+
+- **Categorical Features:**
+    - `AIRLINE`, `ORIGIN`, and `DEST`: These features capture airline-specific, origin-specific, and
+      destination-specific patterns in delays.
+
+### **Binary Label Preparation**
+
+Because there is no column in the dataset indicating the "greater or equal to 15 minutes of departure delay", we need to
+create this column. How?
+
+We create another column for each row named `label` which is True (1) if the departure was delayed by 15 minutes and
+False (0) else.
+This binary label enables the model to focus on identifying significant delays, simplifying the classification task into
+a binary decision-making problem.
+
+---
+
+### **5. Training and Evaluating Models**
+
+To train and evaluate the Logistic Regression and Random Forest models:
+
+**Logistic Regression:**
+
+```bash
+python main_flight.py load train_evaluate_logistic_regression
+```
+
+**Random Forest:**
+
+```bash
+python main_flight.py load train_evaluate_random_forest
+```
+
+---
+
+#### Training and Evaluating Models
+
+But how the Logistic Regression and Random Forest models are trained, tuned, and evaluated to predict flight delays?
+
+#### **Training Process**
+
+When any of the `train_evaluate` commands is executed, this is what is happening:
+
+1. **Data Preparation:**
+    - The dataset is preprocessed by handling missing values, performing feature engineering, and preparing a binary
+      label column indicating whether a flight is delayed by more than 15 minutes.
+
+2. **Train-Test Split:**
+    - The data is split into training and testing sets (80-20) to train the models and evaluate their performance on
+      unseen data.
+
+3. **Model Tuning:**
+    - Both models are tuned using a hyperparameter grid search:
+        - Logistic Regression:
+            - Regularization parameter (`regParam`).
+            - Elastic Net mixing ratio (`elasticNetParam`).
+        - Random Forest:
+            - Number of trees (`numTrees`).
+            - Maximum depth of trees (`maxDepth`).
+
+4. **Cross-Validation:**
+    - Five-fold cross-validation is applied during model training to find the best hyperparameter settings based on the
+      Area Under the ROC Curve (AUC).
+
+5. **Final Training:**
+    - The best-performing model from cross-validation is used to make predictions on the test dataset.
+
+Then with the best model, we do the evaluation as following
+
+---
+
+### **6. Evaluation Process**
+
+1. **Metrics Computed:**
+    - Key evaluation metrics include:
+        - **AUC (Area Under the Curve):** Measures the ability to distinguish between delayed and non-delayed flights.
+        - **Accuracy:** Percentage of correct predictions.
+        - **Precision:** Proportion of predicted delays that are actual delays.
+        - **Recall:** Proportion of actual delays that are correctly predicted.
+        - **F1-Score:** Harmonic mean of precision and recall.
+    - A confusion matrix is generated to summarize the performance.
+
+2. **ROC Curve:**
+    - The ROC curve is plotted to visualize the model’s true positive rate (TPR) versus the false positive rate (FPR)
+      across different thresholds.
+
+3. **Random Forest Feature Importance:**
+    - For the Random Forest model, feature importance is computed to identify which factors contribute most to
+      predicting flight delays.
+
+---
+
+A little literature about the models we used in this project.
+What are they used and how they should be evaluated?
+
+#### **Model-Specific Details**
+
+- **Logistic Regression:**
+    - Suitable for linear relationships between features and the label.
+    - AUC and other metrics are used to evaluate its ability to classify delayed and non-delayed flights.
+
+- **Random Forest:**
+    - Effective for capturing non-linear relationships.
+    - Provides insights into feature importance, highlighting key factors influencing flight delays.
+
+---
+
+### **7. Results**
+
+Finally, it is time to evaluate and compare our Logistic Regression and Random Forest models
+
+#### 1. **Logistic Regression Model Evaluation**
+
+- **Performance Metrics:**
+  ```
+  AUC: 0.9235
+  Accuracy: 91.60%
+  Precision: 92.17%
+  Recall: 91.60%
+  F1-Score: 90.50%
+  ```
+    - The high **AUC (0.9235)** indicates that the Logistic Regression model is effective at distinguishing between
+      delayed and non-delayed flights.
+    - The **Accuracy (91.60%)** suggests the model is highly accurate at predicting delays.
+    - **Precision (92.17%)** shows that the model is good at minimizing false positives, meaning most flights predicted
+      as delayed are actually delayed.
+    - The **Recall (91.60%)** reflects that the model correctly identifies most delayed flights, although a small
+      fraction is missed.
+    - The **F1-Score (90.50%)** balances precision and recall, confirming the model's strong overall performance.
+
+- **Confusion Matrix:**
+  ```
+  +-----+----------+------+
+  |label|prediction| count|
+  +-----+----------+------+
+  |    0|       0.0|248525|
+  |    0|       1.0|   534|
+  |    1|       0.0| 24714|
+  |    1|       1.0| 26676|
+  +-----+----------+------+
+  ```
+    - True Negatives (248,525): Non-delayed flights correctly identified.
+    - False Positives (534): Flights incorrectly predicted as delayed.
+    - True Positives (26,676): Delayed flights correctly identified.
+    - False Negatives (24,714): Delayed flights incorrectly predicted as non-delayed.
+    - Interpretation:
+        - The model performs well with very few false positives but struggles slightly with false negatives, which could
+          impact its ability to catch all delays.
+
+- **ROC Curve Visualization:**
+    - ![Logistic Regression ROC Curve](files/3.%20flight%20prediction/roc/lr%20roc%20curve.png)
+    - The ROC curve shows strong separation between true positives and false positives, reflecting excellent
+      performance.
+
+---
+
+#### 2. **Random Forest Model Evaluation**
+
+- **Performance Metrics:**
+  ```
+  AUC: 0.9229
+  Accuracy: 90.45%
+  Precision: 91.04%
+  Recall: 90.45%
+  F1-Score: 88.99%
+  ```
+    - The **AUC (0.9229)** is nearly identical to Logistic Regression, indicating similar capability in distinguishing
+      delays.
+    - The **Accuracy (90.45%)** is slightly lower than Logistic Regression.
+    - **Precision (91.04%)** remains high, but lower than Logistic Regression, showing more false positives.
+    - **Recall (90.45%)** is also slightly lower, meaning some delayed flights are missed.
+    - The **F1-Score (88.99%)** suggests a slight drop in overall balance compared to Logistic Regression.
+
+- **Confusion Matrix:**
+  ```
+  +-----+----------+------+
+  |label|prediction| count|
+  +-----+----------+------+
+  |    0|       0.0|248201|
+  |    0|       1.0|   858|
+  |    1|       0.0| 27829|
+  |    1|       1.0| 23561|
+  +-----+----------+------+
+  ```
+    - True Negatives (248,201): Non-delayed flights correctly identified.
+    - False Positives (858): More flights incorrectly predicted as delayed compared to Logistic Regression.
+    - True Positives (23,561): Fewer delayed flights correctly identified compared to Logistic Regression.
+    - False Negatives (27,829): Higher number of delayed flights missed compared to Logistic Regression.
+    - Interpretation:
+        - Random Forest is slightly less precise and has a higher false negative rate than Logistic Regression, leading
+          to fewer delayed flights being captured.
+
+- **Feature Importance Visualization:**
+    - The Random Forest model allows interpretation of feature importance, which can guide understanding of the factors
+      most predictive of delays.
+
+---
+
+#### 3. **Insights from Model Comparisons**
+
+- Logistic Regression outperforms Random Forest slightly in terms of accuracy, precision, recall, and F1-score.
+- Both models exhibit high AUC values, confirming their effectiveness in separating delayed from non-delayed flights.
+- Logistic Regression has a lower false negative rate, making it preferable when identifying all delayed flights is
+  critical.
+- Random Forest provides feature importance insights, which can be invaluable for further analysis and domain-specific
+  interventions.
+
+---

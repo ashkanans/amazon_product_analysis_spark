@@ -42,6 +42,13 @@ def main(actions, data_path):
             else:
                 print("Data not loaded. Please load data before checking for missing values.")
 
+        elif action == "handle_missing_values":
+            if df:
+                analyzer = FlightDataAnalyzer(df)
+                analyzer.handle_missing_values()
+            else:
+                print("Data not loaded. Please load data before checking for missing values.")
+
         elif action == "train_evaluate_logistic_regression":
             if df:
                 analyzer = FlightDataAnalyzer(df)
