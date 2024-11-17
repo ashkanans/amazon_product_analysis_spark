@@ -1118,13 +1118,19 @@ The neural network was evaluated on the test dataset, and the following metrics 
 
 ---
 
-#### 4. **Insights from Model Comparisons**
+### 4. **Insights from Model Comparisons**
 
-- Logistic Regression outperforms Random Forest slightly in terms of accuracy, precision, recall, and F1-score.
-- Both models exhibit high AUC values, confirming their effectiveness in separating delayed from non-delayed flights.
-- Logistic Regression has a lower false negative rate, making it preferable when identifying all delayed flights is
-  critical.
-- Random Forest provides feature importance insights, which can be invaluable for further analysis and domain-specific
-  interventions.
+- **Logistic Regression** outperforms **Random Forest** slightly in terms of accuracy, precision, recall, and F1-score,
+  with a notable advantage in minimizing false negatives, making it suitable for scenarios where identifying all delayed
+  flights is crucial.
+- **Random Forest** offers comparable performance and provides feature importance insights, making it valuable for
+  understanding the underlying factors contributing to delays.
+- The **Neural Network Model** achieves the highest accuracy (95.51%) and precision (95.24%), confirming its ability to
+  minimize false positives while maintaining strong overall performance.
+- The **AUC values** of all models are high (Logistic Regression: 0.923, Random Forest: 0.923, Neural Network: 0.926),
+  showcasing their robustness in distinguishing between delayed and non-delayed flights.
+- Despite its superior accuracy, the Neural Network has slightly lower recall (77.46%), indicating that it misses more
+  delayed flights compared to Logistic Regression. However, its F1-score (85.43%) balances precision and recall
+  effectively.
 
 ---
