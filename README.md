@@ -1,6 +1,68 @@
 
 # Product Search and Flight Delay Prediction
 
+### Table of Contents for the Markdown File
+
+1. **Product Search and Flight Delay Prediction**
+    - [Project Description](#project-description)
+    - [Project Structure](#project-structure)
+
+2. **Amazon Product Search**
+    - [Objective](#objective)
+    - [Implementation](#implementation)
+        - [Web Scraping](#1-web-scraping)
+        - [Text Preprocessing](#2-text-preprocessing)
+        - [Word Frequency Analysis](#3-word-frequency-analysis)
+        - [Search Engine](#4-search-engine)
+        - [Topic Modeling](#5-topic-modeling)
+    - [Running the Program](#running-the-program)
+        - [Setup](#setup)
+        - [Commands and Examples](#commands-and-examples)
+            - [Scraping Data](#1-scraping-data)
+            - [Loading and Preprocessing Existing Data](#2-loading-and-preprocessing-existing-data)
+            - [Word Frequency Analysis](#3-word-frequency-analysis)
+            - [Topic Modeling (LDA)](#4-topic-modeling-lda)
+            - [Search Functionality](#5-search-functionality)
+        - [Notes](#notes)
+
+3. **Spark Implementation of Amazon Product Search**
+    - [Implementation Steps](#implementation-steps)
+        - [Preprocessing with Spark](#1-use-spark-to-preprocess-the-data)
+        - [Search Engine with Spark](#2-use-spark-to-build-the-search-engine)
+    - [Commands and Examples](#commands-and-examples-1)
+        - [Spark Preprocessing and Search](#1-using-spark-to-preprocess-and-search-the-data)
+        - [Word, Bigram, and Trigram Frequencies](#2-analyzing-word-bigram-and-trigram-frequencies)
+        - [LDA Topic Modeling](#3-running-lda-topic-modeling)
+
+4. **Flight Delay Prediction**
+    - [Project Overview](#flight-delay-prediction)
+        - [Task Objective](#what-is-the-task)
+    - [Commands and Examples](#commands-and-examples-2)
+        - [Downloading and Loading Data](#1-downloading-and-loading-data)
+        - [Notes on Kaggle API Setup](#notes-on-kaggle-api-setup)
+    - [Exploratory Data Analysis (EDA)](#2-exploratory-data-analysis-eda)
+        - [Delay Distributions](#1-departure-and-arrival-delay-distributions)
+        - [Delay and Cancellation Rates by Airline](#2-delay-and-cancellation-rates-by-airline)
+        - [Time-Based Patterns](#3-time-based-patterns)
+        - [Correlation Heatmap](#4-correlation-heatmap)
+        - [Cancellation Reasons](#5-cancellation-reasons)
+    - [Handling Missing Values](#3-checking-and-handling-missing-values)
+        - [Identifying Missing Values](#identifying-missing-values)
+        - [Handling Strategies](#handling-missing-values)
+    - [Feature Engineering and Label Preparation](#4-feature-engineering-and-label-preparation)
+        - [Feature Selection](#feature-engineering)
+        - [Binary Label Preparation](#binary-label-preparation)
+    - [Training and Evaluating Models](#5-training-and-evaluating-models)
+        - [Training Process](#training-process)
+        - [Evaluation Process](#evaluation-process)
+    - [Model Details](#model-specific-details)
+        - [Logistic Regression](#logistic-regression)
+        - [Random Forest](#random-forest)
+    - [Model Results and Comparison](#7-results)
+        - [Logistic Regression Evaluation](#1-logistic-regression-model-evaluation)
+        - [Random Forest Evaluation](#2-random-forest-model-evaluation)
+        - [Model Comparison Insights](#3-insights-from-model-comparisons)
+
 ---
 
 ## Project Description
